@@ -1,3 +1,5 @@
 numpy>=1.24
 matplotlib>=3.7
 pytest>=7.0
+openai>=1.30
+python-dotenv>=1.0

@@ -4,6 +4,9 @@ import os
 from dataclasses import dataclass, field
 
 import numpy as np
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 @dataclass
@@ -42,11 +45,31 @@ class ExperimentConfig:
 
 
 @dataclass
+class LLMConfig:
+    """大模型配置（阶段二：LLM Agent）。"""
+
+    model_name: str = "deepseek-chat"
+    api_key: str = field(default_factory=lambda: os.getenv("DEEPSEEK_API_KEY", ""))
+    base_url: str = field(
+        default_factory=lambda: os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+    )
+    temperature: float = 0.7
+    max_tokens: int = 1024
+    timeout_seconds: float = 60.0
+
+    @property
+    def enabled(self) -> bool:
+        """是否配置了真实 API Key。"""
+        return bool(self.api_key and not self.api_key.startswith("sk-your-key"))
+
+
+@dataclass
 class AppConfig:
     """全局配置聚合。"""
 
     evolution: EvolutionConfig = field(default_factory=EvolutionConfig)
     experiment: ExperimentConfig = field(default_factory=ExperimentConfig)
+    llm: LLMConfig = field(default_factory=LLMConfig)
     log_level: str = "INFO"
 
 

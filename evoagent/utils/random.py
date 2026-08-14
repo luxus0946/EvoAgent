@@ -25,3 +25,17 @@ def make_rng(seed: int) -> np.random.Generator:
         独立 RNG 实例
     """
     return np.random.default_rng(seed)
+
+
+_GLOBAL_RNG = np.random.default_rng()
+
+
+def get_global_rng() -> np.random.Generator:
+    """返回全局 RNG（Agent 工作流等无显式种子场景使用）。"""
+    return _GLOBAL_RNG
+
+
+def set_global_seed(seed: int) -> None:
+    """重置全局 RNG 种子。"""
+    global _GLOBAL_RNG
+    _GLOBAL_RNG = np.random.default_rng(seed)

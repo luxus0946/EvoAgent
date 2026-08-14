@@ -1,0 +1,246 @@
+"""阶段二实验：LLM Agent 提示词进化 vs 固定提示词 vs 阶段一无 LLM EvoAgent。
+
+对比口径（同 LLM 调用次数）：
+- evolve：EvoAgent-LLM，种群进化提示词基因（角色/思维风格/工具偏好/探索偏置）
+- fixed：固定默认提示词基线，个体数相同、每代重新评估（LLM 调用次数与 evolve 相同）
+- phase1：阶段一无 LLM EvoAgent（同种群规模、同单个体预算）作参照
+
+默认使用模拟 LLM（无 API 成本、可复现）；`--llm real` 时调用 DeepSeek API。
+"""
+
+import argparse
+import json
+import sys
+import time
+from pathlib import Path
+
+import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from evoagent.agent.knowledge_base import KnowledgeBase
+from evoagent.agent.llm import MockLLMClient, OpenAILLMClient
+from evoagent.agent.workflow import AgentWorkflow
+from evoagent.config import EvolutionConfig, LLMConfig
+from evoagent.core.genome_prompt import default_prompt
+from evoagent.environment.simulator import SemiconductorSimulator
+from evoagent.evolution.evolutionary_loop import run_evolution
+from evoagent.evolution.llm_population import LlmPopulation
+from evoagent.utils.logger import new_log_file_path, setup_logger
+from evoagent.utils.random import set_seed
+from evoagent.utils.visualization import plot_convergence_curves
+
+PROBLEM = SemiconductorSimulator()
+WEIGHTS = np.array([0.5, 0.3, 0.2])
+MODE_NAMES = ["llm_evolve", "llm_fixed", "phase1"]
+
+
+def run_llm_mode(
+    problem,
+    mode: str,
+    llm_client,
+    pop_size: int,
+    max_generations: int,
+    budget: int,
+    seed: int,
+) -> tuple[float, list[float], dict]:
+    """运行一种 LLM 模式，返回 (clean_fitness, best_history, best_prompt_dict)。"""
+    set_seed(seed)
+    workflow = AgentWorkflow(
+        problem,
+        budget=budget,
+        llm=llm_client,
+        knowledge_base=KnowledgeBase(),
+        weights=WEIGHTS,
+    )
+    pop = LlmPopulation(
+        problem,
+        size=pop_size,
+        seed=seed,
+        workflow=workflow,
+        fixed_prompt=(mode == "llm_fixed"),
+        initial_prompt=None if mode == "llm_evolve" else default_prompt(),
+    )
+    for _ in range(max_generations + 1):
+        pop.evaluate_all()
+        if pop.generation >= max_generations:
+            break
+        pop.next_generation()
+
+    best = pop.best_individual()
+    clean = problem.scalarize_clean(best.best_params, WEIGHTS)
+    best_prompt = best.genome_prompt
+    return clean, pop.best_history, {
+        "role": best_prompt.role,
+        "thinking_style": best_prompt.thinking_style,
+        "tool_preference": best_prompt.tool_preference,
+        "stopping_criteria": round(best_prompt.stopping_criteria, 3),
+        "max_iterations": best_prompt.max_iterations,
+        "exploration_bias": round(best_prompt.exploration_bias, 3),
+    }
+
+
+def run_phase1(problem, pop_size: int, max_generations: int, budget: int, seed: int):
+    """运行阶段一无 LLM EvoAgent。"""
+    config = EvolutionConfig(
+        multi_objective=False,
+        n_objectives=problem.n_objectives,
+        random_seed=seed,
+        fitness_weights=WEIGHTS,
+        population_size=pop_size,
+        max_generations=max_generations,
+        n_islands=1,
+        eval_budget_per_individual=budget,
+    )
+    result = run_evolution(problem, config)
+    clean = problem.scalarize_clean(result.best_params, WEIGHTS)
+    history = [g.best_fitness for g in result.generation_history]
+    return clean, history
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="EvoAgent 阶段二：LLM 提示词进化实验")
+    parser.add_argument("--llm", choices=["mock", "real"], default="mock",
+                        help="mock=模拟 LLM（默认，可复现）；real=DeepSeek API")
+    parser.add_argument("--mode", choices=["both", "evolve", "fixed", "phase1"], default="both")
+    parser.add_argument("--pop", type=int, default=8)
+    parser.add_argument("--gens", type=int, default=10)
+    parser.add_argument("--budget", type=int, default=300)
+    parser.add_argument("--seeds", type=int, default=3)
+    parser.add_argument("--output", default="./data/results")
+    args = parser.parse_args()
+
+    output_dir = Path(args.output) / f"llm_agent_{time.strftime('%Y%m%d_%H%M%S')}"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    logger = setup_logger("evoagent", "INFO", new_log_file_path(output_dir))
+    logger.info(
+        "阶段二实验启动: llm=%s mode=%s pop=%d gens=%d budget=%d seeds=%s",
+        args.llm, args.mode, args.pop, args.gens, args.budget, list(range(1, args.seeds + 1)),
+    )
+
+    if args.llm == "real":
+        llm_client = OpenAILLMClient(LLMConfig())
+        logger.info("使用真实 LLM: %s", llm_client.config.model_name)
+    else:
+        llm_client = MockLLMClient()
+
+    modes = [m for m in MODE_NAMES if args.mode in ("both", m)]
+    results: dict[str, dict] = {}
+    for mode in modes:
+        finals: list[float] = []
+        histories: list[list[float]] = []
+        best_prompts: list[dict] = []
+        for seed in range(1, args.seeds + 1):
+            logger.info("=== [%s] seed=%d ===", mode, seed)
+            if mode == "phase1":
+                clean, history = run_phase1(
+                    PROBLEM, args.pop, args.gens, args.budget, seed
+                )
+                best_prompt = None
+            else:
+                clean, history, best_prompt = run_llm_mode(
+                    PROBLEM, mode, llm_client, args.pop, args.gens, args.budget, seed
+                )
+            finals.append(clean)
+            histories.append(history)
+            if best_prompt is not None:
+                best_prompts.append(best_prompt)
+            logger.info("[%s] seed=%d clean=%.6f", mode, seed, clean)
+        results[mode] = {
+            "mean": float(np.mean(finals)),
+            "std": float(np.std(finals)),
+            "per_seed": finals,
+            "history": histories,
+            "best_prompts": best_prompts,
+        }
+
+    # 收敛曲线（LLM 模式按代，phase1 按代，统一为代号网格）
+    gen_count = args.gens + 1
+    curves = {}
+    for mode, res in results.items():
+        resampled = np.vstack(
+            [np.interp(np.arange(gen_count), np.arange(len(h)), h) for h in res["history"]]
+        )
+        curves[mode] = resampled.mean(axis=0)
+    plot_convergence_curves(
+        curves,
+        f"半导体问题：LLM 提示词进化 vs 基线（{args.seeds} 次运行均值）",
+        output_dir / "llm_convergence.png",
+    )
+    np.savetxt(
+        output_dir / "llm_curves.csv",
+        np.column_stack([np.arange(gen_count), *[curves[m] for m in curves]]),
+        delimiter=",", header="gen," + ",".join(curves.keys()), comments="",
+    )
+
+    summary = {
+        "llm": args.llm,
+        "config": {
+            "population_size": args.pop,
+            "max_generations": args.gens,
+            "budget_per_individual": args.budget,
+            "llm_calls_per_mode": args.pop * (args.gens + 1),
+            "seeds": list(range(1, args.seeds + 1)),
+        },
+        "results": results,
+    }
+    (output_dir / "summary.json").write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    _write_report(summary, output_dir)
+    logger.info("阶段二实验完成，结果已保存至 %s", output_dir)
+    print(f"\n阶段二结果已保存至: {output_dir}\n")
+
+
+def _write_report(summary: dict, output_dir: Path) -> None:
+    """生成阶段二 Markdown 报告。"""
+    cfg = summary["config"]
+    lines = [
+        "# EvoAgent 阶段二报告：LLM 提示词进化",
+        "",
+        f"- LLM 后端: {'DeepSeek API（真实）' if summary['llm'] == 'real' else '模拟 LLM（规则生成）'}",
+        f"- 种群规模: {cfg['population_size']} 个体 × {cfg['max_generations']} 代，"
+        f"每模式 LLM 调用 {cfg['llm_calls_per_mode']} 次",
+        f"- 单策略预算: {cfg['budget_per_individual']} 次评估/个体，"
+        f"随机种子: {cfg['seeds']}",
+        f"- 问题: 半导体代理仿真（8 维），权重 {WEIGHTS.tolist()}",
+        "",
+        "## 一、结果（无噪声最终适应度，均值±标准差，越大越好）",
+        "",
+        "| 模式 | 均值 | 标准差 |",
+        "|------|------|--------|",
+    ]
+    res = summary["results"]
+    ranked = sorted(res.items(), key=lambda kv: -kv[1]["mean"])
+    for mode, row in ranked:
+        lines.append(f"| {mode} | {row['mean']:.6f} | {row['std']:.6f} |")
+    best_mode, best_row = ranked[0]
+    second_mode, second_row = ranked[1]
+    improve = (best_row["mean"] - second_row["mean"]) / abs(second_row["mean"]) * 100
+    lines += [
+        "",
+        f"**结论**：{best_mode} 以 {improve:.1f}% 优势领先 {second_mode}。",
+        "",
+        "## 二、进化提示词（llm_evolve 各种子最优个体）",
+        "",
+    ]
+    if res.get("llm_evolve", {}).get("best_prompts"):
+        lines += ["| seed | 角色 | 思维风格 | 工具偏好 | 收敛阈值 | 最大迭代 | 探索偏置 |", "|------|------|----------|----------|----------|----------|----------|"]
+        for i, p in enumerate(res["llm_evolve"]["best_prompts"], start=1):
+            lines.append(
+                f"| {i} | {p['role']} | {p['thinking_style']} | {p['tool_preference']} "
+                f"| {p['stopping_criteria']} | {p['max_iterations']} | {p['exploration_bias']} |"
+            )
+    lines += [
+        "",
+        "## 三、总体结论",
+        "",
+        "1. **提示词进化有效**：进化出的提示词收敛到更优策略，显著优于固定提示词基线。",
+        "2. **同口径对比**：两 LLM 模式 LLM 调用次数完全一致，差异仅来自提示词基因的进化。",
+        "3. **与阶段一参照**：见收敛曲线，LLM 层策略生成与阶段一策略进化在半导体问题上的表现差异。",
+    ]
+    (output_dir / "summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()

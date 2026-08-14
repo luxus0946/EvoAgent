@@ -68,9 +68,13 @@ class AgentIndividual:
     best_params: np.ndarray | None = None
     n_evals: int = 0
     n_improvements: int = 0
+    genome_prompt: object | None = None
 
     def clone(self) -> "AgentIndividual":
         """深拷贝个体（含评估结果字段，供迁移等场景保留适应度）。"""
+        clone_prompt = (
+            None if self.genome_prompt is None else self.genome_prompt.clone()
+        )
         return AgentIndividual(
             agent_id=self.agent_id,
             genome=self.genome.clone(),
@@ -81,6 +85,7 @@ class AgentIndividual:
             best_params=None if self.best_params is None else self.best_params.copy(),
             n_evals=self.n_evals,
             n_improvements=self.n_improvements,
+            genome_prompt=clone_prompt,
         )
 
 
