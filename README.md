@@ -127,7 +127,6 @@ EvoAgent 的设计与以下工作同属"LLM + 进化计算"研究脉络，并从
 | [SCOPE](https://github.com/JarvisPei/SCOPE) | 学术开源 | 从执行轨迹自动进化 Agent 提示，tactical/strategic 双层记忆 | 提示词基因进化的借鉴来源：Generator + Selector（Best-of-N）合成、冲突消解/蕴含剪枝/合并的记忆优化器，适用于 EvoAgent Meta 层超参规则沉淀 |
 
 > 注：上述仓库均已 fork 至 [github.com/luxus0946](https://github.com/luxus0946) 并在本地精读，
-> 详细架构对比见仓库 `C:\code\EvoAgentRefs` 与精读记录。
 
 ## 代码结构
 
