@@ -70,12 +70,18 @@ python experiments/run_llm_agent.py --llm real --seeds 1
 | ackley | **-0.79** | cma_es -3.40 | +76.7% |
 | rastrigin | **-4.03** | cma_es -15.26 | +73.6% |
 
+![阶段一单目标对比](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/phase1_single_objective.png)
+
 ### 多目标（超体积，越大越好）
 
 | 问题 | EvoAgent | NSGA-II 基线 | 领先幅度 |
 |------|----------|--------------|---------|
 | zdt1 | **0.9951** | 0.9442 | +5.4% |
 | semiconductor_2obj | **0.1417** | 0.1214 | +16.7% |
+
+![阶段一多目标对比](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/phase1_multi_objective.png)
+
+![半导体收敛曲线](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/semiconductor_convergence.png)
 
 **结论**：EvoAgent 在所有测试问题上不劣于最佳单一算法，在含噪/多峰问题上
 （半导体、Rastrigin、Ackley、Rosenbrock）显著胜出，多次运行标准差最小；
@@ -97,6 +103,10 @@ python experiments/run_llm_agent.py --llm real --seeds 1
 | llm_evolve（进化提示词） | **0.0728** | 0.0040 |
 | llm_fixed（固定提示词） | 0.0694 | 0.0023 |
 | phase1（无 LLM） | 0.0647 | 0.0102 |
+
+![阶段二对比](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/phase2_llm_comparison.png)
+
+![提示词进化收敛曲线](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/llm_convergence.png)
 
 **结论**：进化提示词以 +4.9% 领先固定提示词基线（LLM 调用次数完全一致，
 差异仅来自提示词基因的进化）；LLM + RAG 知识库生成策略整体优于阶段一无

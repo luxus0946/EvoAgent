@@ -1,4 +1,4 @@
-# EvoAgent
+﻿# EvoAgent
 
 > An autonomous evolutionary multi-agent system for semiconductor process optimization (algorithm-verification edition)
 
@@ -165,7 +165,7 @@ python experiments/make_readme_figures.py
 | ackley | **-0.79** | cma_es -3.40 | +76.7% |
 | rastrigin | **-4.03** | cma_es -15.26 | +73.6% |
 
-![Phase 1 single-objective results](figures/phase1_single_objective.png)
+![Phase 1 single-objective results](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/phase1_single_objective.png)
 
 ### Phase 1 - multi-objective (hypervolume, higher is better)
 
@@ -174,9 +174,9 @@ python experiments/make_readme_figures.py
 | zdt1 | **0.9951** | 0.9442 | +5.4% |
 | semiconductor_2obj | **0.1417** | 0.1214 | +16.7% |
 
-![Phase 1 multi-objective results](figures/phase1_multi_objective.png)
+![Phase 1 multi-objective results](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/phase1_multi_objective.png)
 
-![Semiconductor convergence (Phase 1)](figures/semiconductor_convergence.png)
+![Semiconductor convergence (Phase 1)](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/semiconductor_convergence.png)
 
 ### Phase 2 - LLM prompt evolution (2026-08-14, mock LLM, 3 seeds)
 
@@ -189,9 +189,9 @@ Semiconductor problem, weights [0.5, 0.3, 0.2], identical LLM-call count per mod
 | llm_fixed (fixed prompt) | 0.0694 | 0.0023 |
 | phase1 (no LLM) | 0.0647 | 0.0102 |
 
-![Phase 2 comparison](figures/phase2_llm_comparison.png)
+![Phase 2 comparison](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/phase2_llm_comparison.png)
 
-![Prompt evolution convergence (Phase 2)](figures/llm_convergence.png)
+![Prompt evolution convergence (Phase 2)](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/llm_convergence.png)
 
 **Conclusion**: evolved prompts beat the fixed-prompt baseline by **+4.9%** with an
 identical number of LLM calls (the only difference is prompt-gene evolution), and the
