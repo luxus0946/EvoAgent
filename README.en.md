@@ -226,7 +226,7 @@ evolution, and memory management.
 | [SCOPE](https://github.com/JarvisPei/SCOPE) | Academic open-source | Evolving agent prompts from execution trajectories; tactical/strategic dual-stream memory | A reference for prompt-gene evolution: Generator + Selector (Best-of-N) synthesis and a memory optimizer (conflict resolution / subsumption pruning / consolidation), applicable to meta-level hyper-parameter rule accumulation in EvoAgent |
 
 > All repositories above are forked to [github.com/luxus0946](https://github.com/luxus0946)
-> and studied locally; a detailed architecture comparison is kept in `C:\code\EvoAgentRefs`.
+
 
 ## Code structure
 
