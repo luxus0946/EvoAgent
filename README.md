@@ -113,6 +113,22 @@ python experiments/run_llm_agent.py --llm real --seeds 1
 LLM 框架，且多次运行标准差更小。进化出的最优提示词收敛到
 `bo_first / chain_of_thought` 等组合。使用 `--llm real`（DeepSeek）可复现同流程。
 
+## 相关工作（Related Work）
+
+EvoAgent 的设计与以下工作同属"LLM + 进化计算"研究脉络，并从中借鉴了
+岛屿模型、算子式变异、策略/提示词进化与记忆管理等思想：
+
+| 项目 | 出处 | 定位 | 与 EvoAgent 的关系 |
+|------|------|------|-------------------|
+| [FunSearch](https://github.com/google-deepmind/funsearch) | Google DeepMind（*Nature* 2023） | 用 LLM + 进化搜索程序代码 | 岛屿进化的思想源头之一：10 岛屿 + 聚类 softmax 采样 + 温度退火 + 周期重置防早熟（对应 EvoAgent 探索岛/利用岛分化） |
+| [EoH](https://github.com/FeiLiu36/EoH) | 华为诺亚方舟实验室 + 香港城市大学（ICML 2024） | LLM + 进化自动设计启发式算法，思想与代码双表示 | 最贴近"阶段二"精神：LLM 进化求解策略；其算子式变异（e1/e2/m1/m2/m3）与子进程隔离评估可移植到 EvoAgent 的提示词基因变异 |
+| [OpenEvolve](https://github.com/algorithmicsuperintelligence/openevolve) | AlphaEvolve 开源版（7k+★） | 岛屿进化 + LLM 集成 + 多目标 + 评估池 + 检查点的完整框架 | 架构高度相似（岛屿/迁移/LLM 生成-评估闭环）；其三路父代采样、MAP-Elites 特征坐标、级联评估与全状态检查点是 EvoAgent 后续阶段的主要借鉴对象 |
+| [EvoAgentX](https://github.com/wssnail/EvoAgentX) | 社区开源 | 自进化 Agent 工作流，集成 TextGrad / MIPRO / AFlow / SEW / EvoPrompt | 提示词/工作流进化一脉：组合式评估 + 节点级种群 + 图级工作流优化，是 EvoAgent 阶段三（LangGraph 编排）与 Meta 层搜索的模板 |
+| [SCOPE](https://github.com/JarvisPei/SCOPE) | 学术开源 | 从执行轨迹自动进化 Agent 提示，tactical/strategic 双层记忆 | 提示词基因进化的借鉴来源：Generator + Selector（Best-of-N）合成、冲突消解/蕴含剪枝/合并的记忆优化器，适用于 EvoAgent Meta 层超参规则沉淀 |
+
+> 注：上述仓库均已 fork 至 [github.com/luxus0946](https://github.com/luxus0946) 并在本地精读，
+> 详细架构对比见仓库 `C:\code\EvoAgentRefs` 与精读记录。
+
 ## 代码结构
 
 ```

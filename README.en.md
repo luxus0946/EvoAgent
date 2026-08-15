@@ -211,6 +211,23 @@ the same pipeline with a real model.
 - Phase 2: both LLM modes make the same number of LLM calls per seed
   (`population_size x (generations + 1)`), isolating the effect of prompt evolution.
 
+## Related work
+
+EvoAgent belongs to the "LLM + evolutionary computation" line of research and borrows
+from the following works: island models, operator-based mutation, strategy/prompt
+evolution, and memory management.
+
+| Project | Origin | Focus | Relation to EvoAgent |
+|---------|--------|-------|----------------------|
+| [FunSearch](https://github.com/google-deepmind/funsearch) | Google DeepMind (*Nature* 2023) | Program search via LLM + evolution | A conceptual source of island evolution: 10 islands, cluster softmax sampling, temperature annealing and periodic reset to avoid premature convergence (mirrored in EvoAgent's exploration/exploitation islands) |
+| [EoH](https://github.com/FeiLiu36/EoH) | Huawei Noah's Ark Lab + CityU HK (ICML 2024) | Automatic heuristic design with LLM + evolution; dual code-and-idea representation | Closest to the spirit of Phase 2 (LLM evolving solving strategies); its operator-based mutation (e1/e2/m1/m2/m3) and subprocess-isolated evaluation are directly portable to EvoAgent's prompt-gene mutation |
+| [OpenEvolve](https://github.com/algorithmicsuperintelligence/openevolve) | Open-source implementation of AlphaEvolve (7k+ stars) | Full framework: island evolution + LLM integration + multi-objective + evaluation pool + checkpoints | Architecturally very similar (islands/migration/LLM-generate-then-evaluate loop); its three-way parent sampling, MAP-Elites feature coordinates, cascade evaluation and full-state checkpoints are the main references for EvoAgent's next phases |
+| [EvoAgentX](https://github.com/wssnail/EvoAgentX) | Community open-source | Self-evolving agent workflows integrating TextGrad / MIPRO / AFlow / SEW / EvoPrompt | Same vein of prompt/workflow evolution: combinatorial evaluation, per-node populations and graph-level workflow optimization serve as templates for Phase 3 (LangGraph orchestration) and meta-level search |
+| [SCOPE](https://github.com/JarvisPei/SCOPE) | Academic open-source | Evolving agent prompts from execution trajectories; tactical/strategic dual-stream memory | A reference for prompt-gene evolution: Generator + Selector (Best-of-N) synthesis and a memory optimizer (conflict resolution / subsumption pruning / consolidation), applicable to meta-level hyper-parameter rule accumulation in EvoAgent |
+
+> All repositories above are forked to [github.com/luxus0946](https://github.com/luxus0946)
+> and studied locally; a detailed architecture comparison is kept in `C:\code\EvoAgentRefs`.
+
 ## Code structure
 
 ```
