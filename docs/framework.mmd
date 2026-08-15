@@ -1,0 +1,53 @@
+flowchart TB
+    subgraph ENV["Layer 1 - Environment"]
+        SEM["Semiconductor simulator<br/>(8-D, noisy, multi-peak, 3 objectives)"]
+        BENCH["Benchmarks<br/>Rosenbrock / Ackley / Rastrigin / ZDT1"]
+        FIT["Fitness metrics<br/>weighted scalarization / Pareto rank / hypervolume"]
+    end
+
+    subgraph CORE["Layer 2 - Core Genes"]
+        GENOME["Evolvable strategy genome<br/>tool sequence / switch ratio / hyper-params / weights"]
+        PROMPT["Evolvable prompt genome (Phase 2)<br/>role / thinking style / tool preference / exploration bias"]
+    end
+
+    subgraph EVO["Layer 3 - Evolution"]
+        ISL1["Exploration island<br/>high mutation / low selection pressure"]
+        ISL2["Balance island"]
+        ISL3["Exploitation island<br/>low mutation / high selection pressure"]
+        MIG["Ring migration every 3 generations"]
+        OPS["Selection / crossover / mutation / elitism"]
+    end
+
+    subgraph TOOLS["Optimization tool pool (self-implemented in numpy)"]
+        T1["Random search"]
+        T2["Simulated annealing"]
+        T3["Genetic algorithm"]
+        T4["CMA-ES"]
+        T5["Bayesian optimization"]
+        T6["NSGA-II"]
+    end
+
+    subgraph AGENT["Layer 4 - LLM Agent (Phase 2)"]
+        LLM["LLM backend<br/>DeepSeek API / rule-based mock"]
+        RAG["Knowledge base<br/>lightweight RAG retrieval"]
+        WF["Agent workflow<br/>retrieve -> render prompt -> LLM -> strategy JSON -> execute"]
+    end
+
+    OPS --> ISL1
+    OPS --> ISL2
+    OPS --> ISL3
+    ISL1 <--> MIG
+    ISL2 <--> MIG
+    ISL3 <--> MIG
+    ISL1 & ISL2 & ISL3 --> TOOLS
+    T1 & T2 & T3 & T4 & T5 & T6 --> SEM
+    T1 & T2 & T3 & T4 & T5 & T6 --> BENCH
+    SEM --> FIT
+    BENCH --> FIT
+    FIT --> OPS
+    GENOME --> OPS
+    PROMPT --> OPS
+    RAG --> WF
+    WF --> LLM
+    WF --> PROMPT
+    WF --> TOOLS

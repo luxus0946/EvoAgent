@@ -1,0 +1,11 @@
+flowchart LR
+    PROMPT["Evolvable prompt gene<br/>role / thinking style / tool preference / exploration bias"] --> RENDER
+    KB["Knowledge base<br/>algorithm best-practice docs"] --> RETR["Keyword retrieval (RAG)"]
+    RETR --> RENDER["Render system + user prompts<br/>(gene constraints + problem description + knowledge)"]
+    RENDER --> LLM["LLM call<br/>DeepSeek (real) / rule-based (mock)"]
+    LLM --> JSON["Strategy JSON<br/>initial tool / second tool / switch ratio / patience / tool params"]
+    JSON --> PARSE["Parse and validate<br/>fallback to random strategy on error"]
+    PARSE --> EXEC["Strategy executor<br/>fixed budget per individual"]
+    EXEC --> FIT["Fitness<br/>clean re-evaluation on simulator"]
+    FIT --> EVO["Evolution<br/>tournament selection / prompt crossover / mutation / elitism"]
+    EVO --> PROMPT
