@@ -69,6 +69,7 @@ class AgentIndividual:
     n_evals: int = 0
     n_improvements: int = 0
     genome_prompt: object | None = None
+    mode: str = "prompt"
 
     def clone(self) -> "AgentIndividual":
         """深拷贝个体（含评估结果字段，供迁移等场景保留适应度）。"""
@@ -86,6 +87,7 @@ class AgentIndividual:
             n_evals=self.n_evals,
             n_improvements=self.n_improvements,
             genome_prompt=clone_prompt,
+            mode=self.mode,
         )
 
 

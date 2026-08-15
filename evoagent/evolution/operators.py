@@ -211,5 +211,110 @@ def mutate_individual(
     return mutant
 
 
+# ---------------------------------------------------------------- EoH 算子式变异
+
+_E1_TOOLS = ["random_search", "sa", "bo"]
+
+
+def mutate_genome_eoh(
+    genome: StrategyGenome,
+    rate: float,
+    rng: np.random.Generator | None = None,
+    exploit_ratio: float = 0.7,
+) -> StrategyGenome:
+    """EoH 式算子化变异（借鉴 FeiLiu36/EoH evolution.py 的算子设计）。
+
+    探索型算子（结构变化）：
+    - e1: 粗粒度算子替换——换掉一个工具
+    - e2: 算子组合/交换——交换工具顺序
+    利用型算子（参数精调）：
+    - m1: 微调——单个连续参数小步长高斯扰动
+    - m2: 协同扰动——全部连续参数沿同一方向扰动
+    - m3: 权重精调——目标权重小扰动后归一化
+
+    Args:
+        genome: 待变异基因（原地修改）
+        rate: 变异触发概率
+        rng: 随机数生成器
+        exploit_ratio: 利用型算子占比（EoH 以微调为主）
+
+    Returns:
+        变异后的基因
+    """
+    if rng is None:
+        rng = np.random.default_rng()
+    if rng.random() >= rate:
+        return genome
+    if rng.random() < exploit_ratio:
+        operator = str(rng.choice(["m1", "m2", "m3"], p=[0.5, 0.3, 0.2]))
+    else:
+        operator = str(rng.choice(["e1", "e2"]))
+    _apply_eoh_operator(genome, operator, rng)
+    return genome
+
+
+def _apply_eoh_operator(
+    genome: StrategyGenome, operator: str, rng: np.random.Generator
+) -> None:
+    """执行单个 EoH 变异算子。"""
+    if operator == "e1":
+        target = "initial_tool" if rng.random() < 0.5 else "second_tool"
+        setattr(genome, target, str(rng.choice(_E1_TOOLS)))
+    elif operator == "e2":
+        genome.initial_tool, genome.second_tool = (
+            genome.second_tool,
+            genome.initial_tool,
+        )
+    elif operator == "m1":
+        fields = _CONTINUOUS_FIELDS + list(genome.tool_params.keys())
+        field = str(rng.choice(fields))
+        if field in _CONTINUOUS_FIELDS:
+            lo, hi = _field_range(field)
+            value = float(getattr(genome, field))
+            setattr(genome, field, float(np.clip(value + rng.normal(0.0, 0.05), lo, hi)))
+        else:
+            lo, hi = _TOOL_PARAM_RANGES[field]
+            value = genome.tool_params[field]
+            genome.tool_params[field] = float(
+                np.clip(value + rng.normal(0.0, 0.05 * (hi - lo)), lo, hi)
+            )
+    elif operator == "m2":
+        direction = float(rng.choice([-1.0, 1.0]))
+        for f in _CONTINUOUS_FIELDS:
+            lo, hi = _field_range(f)
+            value = float(getattr(genome, f))
+            setattr(
+                genome,
+                f,
+                float(np.clip(value + direction * rng.normal(0.0, 0.03), lo, hi)),
+            )
+        for key, (lo, hi) in _TOOL_PARAM_RANGES.items():
+            value = genome.tool_params[key]
+            genome.tool_params[key] = float(
+                np.clip(
+                    value + direction * rng.normal(0.0, 0.03 * (hi - lo)), lo, hi
+                )
+            )
+    elif operator == "m3":
+        if genome.weights is not None:
+            perturb = rng.normal(0.0, 0.05, len(genome.weights))
+            genome.weights = normalize_weights_after_mix(
+                genome.weights + perturb, genome.weights, rng
+            )
+
+
+def mutate_individual_eoh(
+    individual: AgentIndividual,
+    rate: float,
+    rng: np.random.Generator | None = None,
+) -> AgentIndividual:
+    """EoH 算子式变异的个体封装（返回克隆）。"""
+    if rng is None:
+        rng = np.random.default_rng()
+    mutant = individual.clone()
+    mutate_genome_eoh(mutant.genome, rate, rng)
+    return mutant
+
+
 def _field_range(field: str) -> tuple[float, float]:
     return (0.05, 0.95) if field == "switch_after_ratio" else (0.05, 0.5)

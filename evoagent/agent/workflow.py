@@ -55,22 +55,36 @@ class AgentWorkflow:
         self.weights = weights
         self.call_count = 0
 
-    def run(self, prompt: EvolvablePrompt, seed: int | None = None) -> AgentIndividual:
+    def run(
+        self,
+        prompt: EvolvablePrompt | None = None,
+        seed: int | None = None,
+        mode: str = "prompt",
+    ) -> AgentIndividual:
         """执行一次完整 Agent 流程。
 
         Args:
-            prompt: 可进化提示词基因
+            prompt: 可进化提示词基因（mode="structure" 时可为 None）
             seed: 随机种子（None 使用全局 RNG）
+            mode: SEW 双模式：prompt（提示词引导）/ structure（中性提示，无基因约束）
 
         Returns:
             带评估结果的个体（genome 为 LLM 生成的策略）
         """
         rng = get_global_rng() if seed is None else np.random.default_rng(seed)
-        system = build_system_prompt(prompt)
-        knowledge = self.knowledge_base.retrieve(
-            f"{self.problem.name} {prompt.tool_preference} {prompt.thinking_style}"
-        )
-        user = build_user_prompt(prompt, self.problem, knowledge)
+        if mode == "structure":
+            system = build_system_prompt(None)
+            user = build_user_prompt(None, self.problem)
+        else:
+            if prompt is None:
+                from evoagent.core.genome_prompt import default_prompt
+
+                prompt = default_prompt()
+            system = build_system_prompt(prompt)
+            knowledge = self.knowledge_base.retrieve(
+                f"{self.problem.name} {prompt.tool_preference} {prompt.thinking_style}"
+            )
+            user = build_user_prompt(prompt, self.problem, knowledge)
         try:
             data = timed_chat(self.llm, system, user)
             self.call_count += 1
@@ -85,6 +99,7 @@ class AgentWorkflow:
         individual.best_params = result.best_params
         individual.n_evals = result.n_evals
         individual.n_improvements = result.n_improvements
+        individual.mode = mode
         individual.result = result
         return individual
 

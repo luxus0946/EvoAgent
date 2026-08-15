@@ -178,7 +178,7 @@ python experiments/make_readme_figures.py
 
 ![Semiconductor convergence (Phase 1)](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/semiconductor_convergence.png)
 
-### Phase 2 - LLM prompt evolution (2026-08-14, mock LLM, 3 seeds)
+### Phase 2/3 - LLM prompt evolution + SEW dual-mode (2026-08-15, mock LLM, 3 seeds)
 
 Semiconductor problem, weights [0.5, 0.3, 0.2], identical LLM-call count per mode
 (8 individuals x 11 generations = 88 calls), strategy budget 300 evals per individual:
@@ -186,19 +186,21 @@ Semiconductor problem, weights [0.5, 0.3, 0.2], identical LLM-call count per mod
 | Mode | Mean | Std |
 |------|------|-----|
 | llm_evolve (evolved prompts) | **0.0728** | 0.0040 |
-| llm_fixed (fixed prompt) | 0.0694 | 0.0023 |
-| phase1 (no LLM) | 0.0647 | 0.0102 |
+| llm_fixed (fixed prompt) | 0.0707 | 0.0036 |
+| phase1 (no LLM) | 0.0691 | 0.0044 |
+| llm_sew (SEW dual-mode) | 0.0687 | 0.0044 |
 
-![Phase 2 comparison](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/phase2_llm_comparison.png)
+![Phase 2/3 comparison](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/phase2_llm_comparison.png)
 
-![Prompt evolution convergence (Phase 2)](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/llm_convergence.png)
+![Prompt evolution vs SEW convergence (Phase 2/3)](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/llm_convergence.png)
 
-**Conclusion**: evolved prompts beat the fixed-prompt baseline by **+4.9%** with an
-identical number of LLM calls (the only difference is prompt-gene evolution), and the
-LLM + RAG strategy generation overall outperforms the Phase-1 no-LLM framework with
-lower variance across seeds. The evolved best prompts converge toward combinations
-such as `bo_first / chain_of_thought`. Run with `--llm real` (DeepSeek) to reproduce
-the same pipeline with a real model.
+**Conclusion**: evolved prompts beat the fixed-prompt baseline and the Phase-1 no-LLM
+framework with an identical number of LLM calls (the only difference is prompt-gene
+evolution). The SEW dual-mode (structure + prompt genes co-evolving) does not exceed
+pure prompt evolution under the **mock LLM**, whose strategy output is prompt-agnostic
+and where the structure channel dilutes prompt convergence; its expected gain with
+prompt-sensitive real models should be verified via `--llm real` (DeepSeek).
+Run with `--llm real` to reproduce the same pipeline with a real model.
 
 ### Comparison methodology
 
@@ -251,8 +253,9 @@ figures/           # charts used by this README
 - [x] Phase 1 verification: single-objective + Pareto multi-objective experiments and report
 - [x] Phase 2: LLM Agent layer (OpenAI-compatible DeepSeek) + evolvable prompt genome
 - [x] Phase 2 verification: prompt evolution vs. fixed prompt vs. Phase 1 (same LLM-call budget)
-- [ ] Phase 3: LangGraph orchestration, meta-level hyper-parameter search (Bayesian), PPO tool integration
-- [ ] Phase 4: FastAPI + Gradio + Docker
+- [x] Phase 3 (core four): full-state checkpoints + three-way parent sampling / MAP-Elites + EoH operator mutation + SEW dual-mode
+- [ ] Phase 4: LangGraph orchestration, meta-level hyper-parameter search (Bayesian), PPO tool integration
+- [ ] Phase 5: FastAPI + Gradio + Docker
 
 ## Reproducibility
 

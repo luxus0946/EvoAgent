@@ -12,9 +12,21 @@ import numpy as np
 from evoagent.evolution.population import Population
 
 ISLAND_PROFILES: dict[str, dict[str, float]] = {
-    "explore": {"mutation_rate": 0.30, "selection_pressure": 0.20},
-    "balance": {"mutation_rate": 0.15, "selection_pressure": 0.30},
-    "exploit": {"mutation_rate": 0.05, "selection_pressure": 0.40},
+    "explore": {
+        "mutation_rate": 0.30,
+        "selection_pressure": 0.20,
+        "archive_ratio": 0.4,
+    },
+    "balance": {
+        "mutation_rate": 0.15,
+        "selection_pressure": 0.30,
+        "archive_ratio": 0.25,
+    },
+    "exploit": {
+        "mutation_rate": 0.05,
+        "selection_pressure": 0.40,
+        "archive_ratio": 0.1,
+    },
 }
 
 DEFAULT_ISLAND_NAMES = ["explore", "balance", "exploit"]
@@ -73,20 +85,21 @@ class IslandModel:
         self.islands: list[Population] = []
         for i, name in enumerate(self.names):
             profile = ISLAND_PROFILES.get(name, ISLAND_PROFILES["balance"])
-            self.islands.append(
-                Population(
-                    problem=problem,
-                    size=population_size,
-                    seed=seed + i * 1000,
-                    mutation_rate=profile["mutation_rate"],
-                    selection_pressure=profile["selection_pressure"],
-                    crossover_rate=crossover_rate,
-                    elite_ratio=elite_ratio,
-                    multi_objective=multi_objective,
-                    eval_budget_per_individual=eval_budget_per_individual,
-                    fitness_weights=fitness_weights,
-                )
+            island = Population(
+                problem=problem,
+                size=population_size,
+                seed=seed + i * 1000,
+                mutation_rate=profile["mutation_rate"],
+                selection_pressure=profile["selection_pressure"],
+                crossover_rate=crossover_rate,
+                elite_ratio=elite_ratio,
+                multi_objective=multi_objective,
+                eval_budget_per_individual=eval_budget_per_individual,
+                fitness_weights=fitness_weights,
+                archive_ratio=profile.get("archive_ratio", 0.0),
             )
+            island.name = name
+            self.islands.append(island)
 
     @property
     def n_individuals(self) -> int:

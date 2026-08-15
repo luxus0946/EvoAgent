@@ -49,8 +49,15 @@ def main() -> None:
                         help="每个个体执行策略的评估预算")
     parser.add_argument("--multi-objective", action="store_true")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--checkpoint", default=None,
+                        help="检查点文件路径（每代保存，可与 --resume 配合断点续跑）")
+    parser.add_argument("--resume", action="store_true",
+                        help="从 --checkpoint 指定的检查点断点续跑")
     parser.add_argument("--output", default="./data/results")
     args = parser.parse_args()
+
+    if args.resume and not args.checkpoint:
+        parser.error("--resume 需要 --checkpoint 指定检查点文件")
 
     output_dir = Path(args.output) / f"experiment_{time.strftime('%Y%m%d_%H%M%S')}"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -74,7 +81,9 @@ def main() -> None:
         problem.name, problem.dim, problem.objective_names,
         args.population, args.islands, args.generations, args.budget,
     )
-    result = run_evolution(problem, config)
+    result = run_evolution(
+        problem, config, checkpoint_path=args.checkpoint, resume=args.resume
+    )
     logger.info(
         "实验完成: 最优适应度=%.6f 总评估=%d 耗时=%.2fs",
         result.best_fitness, result.total_evals, result.elapsed_time,

@@ -18,12 +18,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 ROOT = Path(__file__).resolve().parents[1]
 VERIFY_DIR = ROOT / "data" / "results" / "verification_20260814_190641"
-LLM_DIR = ROOT / "data" / "results" / "llm_agent_20260814_193122"
+LLM_DIR = ROOT / "data" / "results" / "llm_agent_20260815_141731"
 OUT = ROOT / "figures"
 
 METHOD_COLORS = {
     "evoagent": "#d62728",
     "llm_evolve": "#d62728",
+    "llm_sew": "#8c564b",
     "llm_fixed": "#ff9896",
     "phase1": "#1f77b4",
     "cma_es": "#1f77b4",
@@ -101,21 +102,26 @@ def multi_objective_chart() -> None:
 
 
 def phase2_chart() -> None:
-    """阶段二：LLM 提示词进化 vs 固定提示词 vs 阶段一。"""
-    modes = ["llm_evolve", "llm_fixed", "phase1"]
-    labels = ["LLM evolve\n(evolved prompts)", "LLM fixed\n(fixed prompt)", "Phase 1\n(no LLM)"]
-    means = [0.072797, 0.069392, 0.064702]
-    stds = [0.004031, 0.002256, 0.010211]
-    colors = ["#d62728", "#ff9896", "#1f77b4"]
-    fig, ax = plt.subplots(figsize=(7.5, 4.4))
+    """阶段二/三：提示词进化 vs SEW 双模式 vs 固定提示词 vs 阶段一。"""
+    modes = ["llm_evolve", "llm_sew", "llm_fixed", "phase1"]
+    labels = [
+        "LLM evolve\n(evolved prompts)",
+        "SEW dual-mode\n(structure + prompt)",
+        "LLM fixed\n(fixed prompt)",
+        "Phase 1\n(no LLM)",
+    ]
+    means = [0.072797, 0.068730, 0.070688, 0.069053]
+    stds = [0.004031, 0.004386, 0.003604, 0.004443]
+    colors = ["#d62728", "#8c564b", "#ff9896", "#1f77b4"]
+    fig, ax = plt.subplots(figsize=(8.5, 4.4))
     bars = ax.bar(modes, means, yerr=stds, capsize=5, color=colors, alpha=0.9)
-    ax.annotate("+4.9%", (1, 0.0702), xytext=(1, 0.0745), ha="center",
+    ax.annotate("+3.0%", (0, 0.074), xytext=(0, 0.078), ha="center",
                 fontsize=10, fontweight="bold", color="#d62728",
                 arrowprops=dict(arrowstyle="->", color="#d62728"))
     ax.set_xticks(modes)
     ax.set_xticklabels(labels)
     ax.set_ylabel("Mean clean fitness (higher is better)")
-    ax.set_title("Phase 2: prompt evolution vs baselines (mock LLM, 3 seeds)")
+    ax.set_title("Phase 2/3: prompt evolution vs SEW vs baselines (mock LLM, 3 seeds)")
     ax.set_ylim(0.05, 0.09)
     fig.tight_layout()
     fig.savefig(OUT / "phase2_llm_comparison.png")
@@ -140,12 +146,12 @@ def convergence_charts() -> None:
     df2 = np.loadtxt(LLM_DIR / "llm_curves.csv", delimiter=",", skiprows=1)
     x2 = df2[:, 0]
     fig, ax = plt.subplots(figsize=(8, 4.6))
-    for i, name in enumerate(["llm_evolve", "llm_fixed", "phase1"], start=1):
+    for i, name in enumerate(["llm_evolve", "llm_sew", "llm_fixed", "phase1"], start=1):
         ax.plot(x2, df2[:, i], label=name, color=METHOD_COLORS[name],
                 linewidth=2.0 if name == "llm_evolve" else 1.4, marker="o", markersize=3)
     ax.set_xlabel("Generation")
     ax.set_ylabel("Best fitness (mean of 3 seeds)")
-    ax.set_title("Semiconductor: prompt evolution convergence (Phase 2)")
+    ax.set_title("Semiconductor: prompt evolution vs SEW convergence (Phase 2/3)")
     ax.legend()
     fig.tight_layout()
     fig.savefig(OUT / "llm_convergence.png")

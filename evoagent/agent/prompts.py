@@ -25,19 +25,27 @@ _PREFERENCE_TEXT = {
 }
 
 
-def build_system_prompt(prompt: EvolvablePrompt) -> str:
+def build_system_prompt(prompt: EvolvablePrompt | None) -> str:
     """构建系统提示（角色 + 输出格式约束）。
 
     Args:
-        prompt: 可进化提示词基因
+        prompt: 可进化提示词基因（None 时使用中性角色，SEW 结构模式）
 
     Returns:
         系统提示字符串
     """
+    if prompt is None:
+        role_text = "你是资深优化专家，熟悉各类全局优化算法。"
+        thinking_text = "请先分析问题，再输出策略。"
+        preference_text = ""
+    else:
+        role_text = _ROLE_TEXT[prompt.role]
+        thinking_text = _THINKING_TEXT[prompt.thinking_style]
+        preference_text = f"{_PREFERENCE_TEXT[prompt.tool_preference]}\n"
     return (
-        f"{_ROLE_TEXT[prompt.role]}\n"
-        f"{_THINKING_TEXT[prompt.thinking_style]}\n"
-        f"{_PREFERENCE_TEXT[prompt.tool_preference]}\n"
+        f"{role_text}\n"
+        f"{thinking_text}\n"
+        f"{preference_text}"
         "你必须在 JSON 代码块中输出一个完整的优化策略，格式如下：\n"
         "```json\n"
         '{"initial_tool": "cma_es", "second_tool": "bo", '
@@ -51,14 +59,14 @@ def build_system_prompt(prompt: EvolvablePrompt) -> str:
 
 
 def build_user_prompt(
-    prompt: EvolvablePrompt,
+    prompt: EvolvablePrompt | None,
     problem: OptimizationProblem,
     knowledge: list[str] | None = None,
 ) -> str:
     """构建用户提示（问题描述 + 知识库检索结果 + 偏好约束）。
 
     Args:
-        prompt: 可进化提示词基因
+        prompt: 可进化提示词基因（None 时省略基因约束段，SEW 结构模式）
         problem: 优化问题
         knowledge: 知识库检索结果
 
@@ -82,15 +90,16 @@ def build_user_prompt(
         lines += [f"- {k}" for k in knowledge]
     else:
         lines.append("- （无）")
-    lines += [
-        "",
-        "你的策略约束（必须遵守）：",
-        f"工具偏好: {prompt.tool_preference}（主工具选择倾向）",
-        f"思维风格: {prompt.thinking_style}（思考方式）",
-        f"探索偏置: {prompt.exploration_bias:.2f}（0=纯利用，1=纯探索）",
-        f"收敛阈值: {prompt.stopping_criteria:.2f}（连续无改进超过该比例时提前终止）",
-        f"最大迭代轮数: {prompt.max_iterations}",
-    ]
+    if prompt is not None:
+        lines += [
+            "",
+            "你的策略约束（必须遵守）：",
+            f"工具偏好: {prompt.tool_preference}（主工具选择倾向）",
+            f"思维风格: {prompt.thinking_style}（思考方式）",
+            f"探索偏置: {prompt.exploration_bias:.2f}（0=纯利用，1=纯探索）",
+            f"收敛阈值: {prompt.stopping_criteria:.2f}（连续无改进超过该比例时提前终止）",
+            f"最大迭代轮数: {prompt.max_iterations}",
+        ]
     return "\n".join(lines)
 
 
