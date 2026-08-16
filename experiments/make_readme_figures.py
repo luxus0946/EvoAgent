@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 ROOT = Path(__file__).resolve().parents[1]
 VERIFY_DIR = ROOT / "data" / "results" / "verification_20260814_190641"
 LLM_DIR = ROOT / "data" / "results" / "llm_agent_20260815_141731"
+META_DIR = ROOT / "data" / "results" / "meta_20260816_190602"
 OUT = ROOT / "figures"
 
 METHOD_COLORS = {
@@ -158,6 +159,23 @@ def convergence_charts() -> None:
     plt.close(fig)
 
 
+def meta_chart() -> None:
+    """Meta 层：默认超参 vs BO 最优超参收敛对比。"""
+    df = np.loadtxt(META_DIR / "meta_curves.csv", delimiter=",", skiprows=1) if (META_DIR / "meta_curves.csv").exists() else None
+    if df is None:
+        return
+    fig, ax = plt.subplots(figsize=(8, 4.6))
+    ax.plot(df[:, 0], df[:, 1], label="default", color="#7f7f7f", linewidth=1.6, marker="o", markersize=4)
+    ax.plot(df[:, 0], df[:, 2], label="meta_optimized", color="#d62728", linewidth=2.0, marker="o", markersize=4)
+    ax.set_xlabel("Generation")
+    ax.set_ylabel("Best fitness (mean of 3 seeds)")
+    ax.set_title("Meta layer: BO-optimized hyperparameters vs default")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(OUT / "meta_convergence.png")
+    plt.close(fig)
+
+
 def main() -> None:
     _style()
     OUT.mkdir(parents=True, exist_ok=True)
@@ -165,6 +183,7 @@ def main() -> None:
     multi_objective_chart()
     phase2_chart()
     convergence_charts()
+    meta_chart()
     print(f"figures saved to {OUT}")
 
 

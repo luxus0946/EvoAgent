@@ -94,7 +94,7 @@ python experiments/run_llm_agent.py --llm real --seeds 1
   种群以并行策略尝试 + 进化选择换取更高样本利用与稳定性。
 - 半导体问题含高斯测量噪声（良率 σ=0.02），指标使用无噪声值重评。
 
-## 阶段二/三：LLM 提示词进化 + SEW 双模式（2026-08-15，模拟 LLM，3 seeds）
+# 阶段二/三：LLM 提示词进化 + SEW 双模式（2026-08-15，模拟 LLM，3 seeds）
 
 半导体问题，权重 [0.5, 0.3, 0.2]，每模式 LLM 调用 88 次（8 个体 × 11 代），单策略预算 300：
 
@@ -112,6 +112,22 @@ python experiments/run_llm_agent.py --llm real --seeds 1
 **结论**：提示词进化稳定领先固定提示词与阶段一基线。SEW 双模式（structure + prompt 共存进化）在
 **模拟 LLM** 下未超过纯提示词进化——模拟 LLM 的策略生成与提示词无关，structure 通道稀释了提示词收敛；
 该设计面向真实 LLM（对提示词敏感的模型）的预期收益需以 `--llm real` 验证。
+
+## Meta 层：贝叶斯优化自动配置进化超参（2026-08-16，半导体）
+
+外层 BO（GP + EI）在超参空间搜索（种群规模/变异率/交叉率/选择压力/精英比例/迁移间隔/迁移率/个体预算），
+每次候选评估 = 用该超参跑 3 代内层进化实验（内层种子固定，评估确定可复现）：
+
+| 配置 | 均值 | 提升 |
+|------|------|------|
+| 默认超参 | 0.0733 | - |
+| **Meta 最优超参** | **0.0759** | **+3.5%** |
+
+![Meta 超参搜索收敛对比](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/meta_convergence.png)
+
+**结论**：BO 找到 `pop=12 / mutation=0.29 / crossover=0.53 / selection_pressure=0.48 / elite=0.06 /
+migration_interval=4 / migration_rate=0.15 / budget=383` 的非默认组合，优于手工默认配置——
+进化算法可自动配置自身（"自主进化的进化算法"）。
 
 ## 相关工作（Related Work）
 
@@ -135,12 +151,13 @@ evoagent/
 ├── environment/   # 第1层：半导体代理仿真 + 标准 Benchmark + 适应度（加权/Pareto/超体积）
 ├── core/          # 第2层：Agent 个体与可进化策略基因 + 可进化提示词基因（genome_prompt）
 ├── evolution/     # 第3层：进化算子（含 EoH 算子）、种群、MAP-Elites 档案、检查点、岛屿模型、进化循环 + LLM 种群（SEW 双模式）
+├── meta/          # Meta 层：贝叶斯优化自动配置进化超参（超参空间编码 + 内层进化评估）
 ├── agent/         # 第4层（阶段二）：LLM 客户端（OpenAI/模拟）、提示词模板、策略生成、RAG 知识库、Agent 工作流
 ├── tools/         # 优化工具池：随机搜索/模拟退火/GA/CMA-ES/贝叶斯优化/NSGA-II（numpy 自研）
 ├── config.py      # 全局配置（含 LLMConfig）
 └── utils/         # 日志、随机种子、可视化
-experiments/       # run_evolution / compare_baselines / run_llm_agent（阶段二/三）/ make_readme_figures
-tests/             # 104 个单元测试（含 agent 层、检查点、MAP-Elites、EoH 算子、SEW 双模式）
+experiments/       # run_evolution / compare_baselines / run_llm_agent（阶段二/三）/ run_meta_search / make_readme_figures
+tests/             # 111 个单元测试（含 agent 层、检查点、MAP-Elites、EoH 算子、SEW 双模式、Meta 层）
 ```
 
 ## 路线图
@@ -150,7 +167,8 @@ tests/             # 104 个单元测试（含 agent 层、检查点、MAP-Elite
 - [x] 阶段二：LLM Agent 层（openai 直连 DeepSeek）+ 可进化提示词基因
 - [x] 阶段二验证：提示词进化 vs 固定提示词 vs 阶段一（同 LLM 调用口径）
 - [x] 阶段三（核心四项）：全状态检查点 + 三路父代采样/MAP-Elites + EoH 算子式变异 + SEW 双模式
-- [ ] 阶段四：LangGraph 编排、Meta 层超参搜索（贝叶斯优化）、PPO 工具接入
+- [x] Meta 层：贝叶斯优化自动配置进化超参（半导体 +3.5%）
+- [ ] 阶段四：LangGraph 编排、PPO 工具接入
 - [ ] 阶段五：FastAPI + Gradio + Docker
 
 ## 可复现性

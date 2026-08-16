@@ -213,6 +213,25 @@ Run with `--llm real` to reproduce the same pipeline with a real model.
 - Phase 2: both LLM modes make the same number of LLM calls per seed
   (`population_size x (generations + 1)`), isolating the effect of prompt evolution.
 
+## Meta layer: BO-optimized evolution hyperparameters (2026-08-16, semiconductor)
+
+An outer Bayesian optimizer (GP + EI) searches the evolution framework's own
+hyperparameters (population size / mutation / crossover / selection pressure / elite
+ratio / migration interval & rate / per-individual budget); each candidate evaluation
+runs a short inner evolution experiment with a fixed inner seed (deterministic):
+
+| Configuration | Mean | Improvement |
+|---------------|------|-------------|
+| Default hyperparameters | 0.0733 | - |
+| **Meta-optimized** | **0.0759** | **+3.5%** |
+
+![Meta convergence](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/meta_convergence.png)
+
+**Conclusion**: BO found a non-default combination
+(`pop=12 / mutation=0.29 / crossover=0.53 / selection_pressure=0.48 / elite=0.06 /
+migration_interval=4 / migration_rate=0.15 / budget=383`) that beats hand-tuned
+defaults — an evolution algorithm that configures itself.
+
 ## Related work
 
 EvoAgent belongs to the "LLM + evolutionary computation" line of research and borrows
@@ -254,7 +273,8 @@ figures/           # charts used by this README
 - [x] Phase 2: LLM Agent layer (OpenAI-compatible DeepSeek) + evolvable prompt genome
 - [x] Phase 2 verification: prompt evolution vs. fixed prompt vs. Phase 1 (same LLM-call budget)
 - [x] Phase 3 (core four): full-state checkpoints + three-way parent sampling / MAP-Elites + EoH operator mutation + SEW dual-mode
-- [ ] Phase 4: LangGraph orchestration, meta-level hyper-parameter search (Bayesian), PPO tool integration
+- [x] Meta layer: Bayesian-optimized evolution hyperparameters (semiconductor +3.5%)
+- [ ] Phase 4: LangGraph orchestration, PPO tool integration
 - [ ] Phase 5: FastAPI + Gradio + Docker
 
 ## Reproducibility
