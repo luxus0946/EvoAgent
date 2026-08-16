@@ -1,4 +1,4 @@
-"""进化算子：选择 / 交叉 / 变异（作用于 Agent 个体的策略基因）。"""
+"""Evolutionary operators: selection / crossover / mutation (applied to agent strategy genomes)."""
 
 import numpy as np
 
@@ -20,7 +20,7 @@ _TOOL_PARAM_RANGES: dict[str, tuple[float, float]] = {
 _CONTINUOUS_FIELDS = ["switch_after_ratio", "stop_patience"]
 
 
-# ---------------------------------------------------------------- 选择算子
+# ---------------------------------------------------------------- selection operators
 
 
 def tournament_selection(
@@ -29,16 +29,16 @@ def tournament_selection(
     tournament_size: int = 3,
     rng: np.random.Generator | None = None,
 ) -> list[AgentIndividual]:
-    """锦标赛选择：从种群中选 k 个适应度高的个体。
+    """Tournament selection: pick k individuals with high fitness from the population.
 
     Args:
-        population: 已评估适应度的种群
-        k: 选择数量
-        tournament_size: 锦标赛规模
-        rng: 随机数生成器
+        population: population with evaluated fitness
+        k: number of individuals to select
+        tournament_size: tournament size
+        rng: random number generator
 
     Returns:
-        选中的个体列表（可重复）
+        list of selected individuals (with replacement)
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -55,7 +55,7 @@ def roulette_selection(
     k: int,
     rng: np.random.Generator | None = None,
 ) -> list[AgentIndividual]:
-    """轮盘赌选择：适应度正比概率选择。"""
+    """Roulette wheel selection: selection probability proportional to fitness."""
     if rng is None:
         rng = np.random.default_rng()
     fitness = np.array([ind.fitness for ind in population], dtype=float)
@@ -72,7 +72,7 @@ def rank_selection(
     k: int,
     rng: np.random.Generator | None = None,
 ) -> list[AgentIndividual]:
-    """排名选择：按适应度排名分配线性概率。"""
+    """Rank selection: linear probabilities assigned by fitness rank."""
     if rng is None:
         rng = np.random.default_rng()
     order = np.argsort([ind.fitness for ind in population])
@@ -83,7 +83,7 @@ def rank_selection(
     return [population[i] for i in idx]
 
 
-# ---------------------------------------------------------------- 交叉算子
+# ---------------------------------------------------------------- crossover operators
 
 
 def crossover_uniform(
@@ -92,16 +92,16 @@ def crossover_uniform(
     probability: float = 0.5,
     rng: np.random.Generator | None = None,
 ) -> AgentIndividual:
-    """均匀交叉：基因字段按概率互换，连续参数算术混合。
+    """Uniform crossover: genome fields swapped by probability; continuous parameters blended arithmetically.
 
     Args:
-        parent1: 父代 1
-        parent2: 父代 2
-        probability: 离散字段交换概率
-        rng: 随机数生成器
+        parent1: parent 1
+        parent2: parent 2
+        probability: swap probability for discrete fields
+        rng: random number generator
 
     Returns:
-        子代个体
+        offspring individual
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -134,7 +134,7 @@ def crossover_arithmetic(
     parent2: AgentIndividual,
     alpha: float = 0.5,
 ) -> AgentIndividual:
-    """算术交叉：连续字段取线性组合。"""
+    """Arithmetic crossover: linear combination of continuous fields."""
     g1, g2 = parent1.genome, parent2.genome
     child = AgentIndividual(agent_id=parent1.agent_id, genome=g1.clone())
     for f in _CONTINUOUS_FIELDS:
@@ -153,7 +153,7 @@ def crossover_arithmetic(
 def normalize_weights_after_mix(
     w1: np.ndarray, w2: np.ndarray, rng: np.random.Generator
 ) -> np.ndarray:
-    """混合两个父代权重向量并归一化。"""
+    """Mix two parent weight vectors and normalize."""
     if rng.random() < 0.5:
         mixed = 0.5 * (w1 + w2)
     else:
@@ -162,7 +162,7 @@ def normalize_weights_after_mix(
     return mixed / total if total > 0 else np.full_like(mixed, 1.0 / len(mixed))
 
 
-# ---------------------------------------------------------------- 变异算子
+# ---------------------------------------------------------------- mutation operators
 
 
 def mutate_genome(
@@ -170,15 +170,15 @@ def mutate_genome(
     rate: float,
     rng: np.random.Generator | None = None,
 ) -> StrategyGenome:
-    """高斯/离散混合变异：以 rate 概率变异每个基因字段。
+    """Gaussian/discrete mixed mutation: mutate each genome field with probability rate.
 
     Args:
-        genome: 待变异基因
-        rate: 变异率
-        rng: 随机数生成器
+        genome: genome to mutate
+        rate: mutation rate
+        rng: random number generator
 
     Returns:
-        变异后的基因（原对象，调用方负责克隆）
+        the mutated genome (same object; the caller is responsible for cloning)
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -206,7 +206,7 @@ def mutate_individual(
     rate: float,
     rng: np.random.Generator | None = None,
 ) -> AgentIndividual:
-    """对个体基因执行变异并返回克隆。"""
+    """Mutate the individual's genome and return a clone."""
     if rng is None:
         rng = np.random.default_rng()
     mutant = individual.clone()
@@ -214,7 +214,7 @@ def mutate_individual(
     return mutant
 
 
-# ---------------------------------------------------------------- EoH 算子式变异
+# ---------------------------------------------------------------- EoH operator-style mutation
 
 _E1_TOOLS = ["random_search", "sa", "bo"]
 
@@ -225,24 +225,24 @@ def mutate_genome_eoh(
     rng: np.random.Generator | None = None,
     exploit_ratio: float = 0.7,
 ) -> StrategyGenome:
-    """EoH 式算子化变异（借鉴 FeiLiu36/EoH evolution.py 的算子设计）。
+    """EoH-style operatorized mutation (inspired by the operator design in FeiLiu36/EoH evolution.py).
 
-    探索型算子（结构变化）：
-    - e1: 粗粒度算子替换——换掉一个工具
-    - e2: 算子组合/交换——交换工具顺序
-    利用型算子（参数精调）：
-    - m1: 微调——单个连续参数小步长高斯扰动
-    - m2: 协同扰动——全部连续参数沿同一方向扰动
-    - m3: 权重精调——目标权重小扰动后归一化
+    Exploration operators (structural changes):
+    - e1: coarse-grained operator replacement — swap in a different tool
+    - e2: operator combination/swap — swap the tool order
+    Exploitation operators (parameter fine-tuning):
+    - m1: fine-tuning — small-step Gaussian perturbation of a single continuous parameter
+    - m2: coordinated perturbation — perturb all continuous parameters along the same direction
+    - m3: weight fine-tuning — small perturbation of objective weights followed by normalization
 
     Args:
-        genome: 待变异基因（原地修改）
-        rate: 变异触发概率
-        rng: 随机数生成器
-        exploit_ratio: 利用型算子占比（EoH 以微调为主）
+        genome: genome to mutate (in place)
+        rate: mutation trigger probability
+        rng: random number generator
+        exploit_ratio: share of exploitation operators (EoH favors fine-tuning)
 
     Returns:
-        变异后的基因
+        the mutated genome
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -259,7 +259,7 @@ def mutate_genome_eoh(
 def _apply_eoh_operator(
     genome: StrategyGenome, operator: str, rng: np.random.Generator
 ) -> None:
-    """执行单个 EoH 变异算子。"""
+    """Apply a single EoH mutation operator."""
     if operator == "e1":
         target = "initial_tool" if rng.random() < 0.5 else "second_tool"
         setattr(genome, target, str(rng.choice(_E1_TOOLS)))
@@ -311,7 +311,7 @@ def mutate_individual_eoh(
     rate: float,
     rng: np.random.Generator | None = None,
 ) -> AgentIndividual:
-    """EoH 算子式变异的个体封装（返回克隆）。"""
+    """Individual wrapper for EoH operator-style mutation (returns a clone)."""
     if rng is None:
         rng = np.random.default_rng()
     mutant = individual.clone()

@@ -1,4 +1,4 @@
-"""进化层测试：选择算子、进化循环、岛屿模型。"""
+"""Evolution layer tests: selection operators, evolution loop, island model."""
 
 import numpy as np
 import pytest
@@ -44,7 +44,7 @@ class TestStrategyExecutor:
         genome = random_individual(rng).genome
         genome.initial_tool, genome.second_tool = "random_search", "cma_es"
         genome.switch_after_ratio = 0.4
-        genome.stop_patience = 0.0  # 关闭早停
+        genome.stop_patience = 0.0  # early stopping disabled
         result = executor.run(genome, budget=100, rng=rng)
         assert result.n_evals == 100
         assert len(result.history) == 100
@@ -84,7 +84,7 @@ class TestEvolutionLoop:
         )
         result = run_evolution(SemiconductorSimulator(), config)
         assert len(result.generation_history) == 3
-        # 小种群短预算下适应度可能为负，验证优于同预算随机搜索即可
+        # Fitness may be negative with a small population and short budget; just verify it beats same-budget random search
         from evoagent.tools.factory import build_tool
 
         random_baseline = build_tool("random_search").optimize(
@@ -121,10 +121,11 @@ class TestEvolutionLoop:
         assert len(result.archive_history) == 3
 
     def test_best_fitness_improves_or_holds(self):
-        """验证进化确实在改善策略。
+        """Verify that evolution actually improves the strategy.
 
-        半导体含噪评估（yield std=0.02）：精英重评估存在噪声波动，
-        放宽到末代不差于首代 0.05（2σ 噪声上限约 0.02）。
+        Semiconductor evaluation is noisy (yield std=0.02): elite re-evaluation has
+        noise fluctuation, so the last generation is only required to not be worse
+        than the first by more than 0.05 (2-sigma noise upper bound about 0.02).
         """
         config = EvolutionConfig(
             population_size=6,

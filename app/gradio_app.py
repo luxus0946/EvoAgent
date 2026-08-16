@@ -1,6 +1,6 @@
-"""EvoAgent Gradio 演示界面：浏览器可视化运行进化实验。
+"""EvoAgent Gradio demo UI: run evolution experiments in the browser.
 
-启动: python app/gradio_app.py（默认 http://127.0.0.1:7860）
+Run: python app/gradio_app.py (default http://127.0.0.1:7860)
 """
 
 import sys
@@ -32,7 +32,7 @@ def run_experiment(
     budget: int,
     seed: int,
 ):
-    """运行进化实验，返回 (摘要文本, 收敛曲线图)。"""
+    """Run an evolution experiment and return (summary text, convergence plot)."""
     problem_cls = (
         SemiconductorSimulator
         if problem_name == "semiconductor"
@@ -78,7 +78,7 @@ def run_experiment(
 
 
 def build_demo() -> gr.Blocks:
-    """构建 Gradio 界面。"""
+    """Build the Gradio UI."""
     with gr.Blocks(title="EvoAgent 演示") as demo:
         gr.Markdown(
             "# EvoAgent：进化 + LLM Agent 自动优化框架\n"

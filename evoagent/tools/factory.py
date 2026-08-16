@@ -1,4 +1,4 @@
-"""工具工厂：按名称与超参构建优化工具实例。"""
+"""Tool factory: builds optimization tool instances by name and hyperparameters."""
 
 from evoagent.tools.base import TOOL_NAMES
 from evoagent.tools.bayesian_opt import BayesianOptTool
@@ -10,17 +10,17 @@ from evoagent.tools.simulated_annealing import SimulatedAnnealingTool
 
 
 def build_tool(name: str, params: dict[str, float] | None = None) -> object:
-    """按名称与超参构建工具。
+    """Build a tool by name and hyperparameters.
 
     Args:
-        name: 工具名称（TOOL_NAMES 之一）
-        params: 工具超参字典
+        name: Tool name (one of TOOL_NAMES)
+        params: Tool hyperparameter dictionary
 
     Returns:
-        工具实例
+        Tool instance
 
     Raises:
-        ValueError: 未知工具名
+        ValueError: Unknown tool name
     """
     params = params or {}
     if name == "random_search":

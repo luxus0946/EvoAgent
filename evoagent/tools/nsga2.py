@@ -1,4 +1,4 @@
-"""NSGA-II 多目标优化基线：非支配排序 + 拥挤度 + 二进制锦标赛选择。"""
+"""NSGA-II multi-objective optimization baseline: non-dominated sorting + crowding distance + binary tournament selection."""
 
 import numpy as np
 
@@ -7,7 +7,7 @@ from evoagent.environment.problem import OptimizationProblem
 
 
 class NSGA2Result:
-    """NSGA-II 运行结果。"""
+    """NSGA-II run result."""
 
     def __init__(
         self,
@@ -27,7 +27,7 @@ class NSGA2Result:
 
 
 class NSGA2Tool:
-    """实数编码 NSGA-II（多目标，最大化约定）。"""
+    """Real-coded NSGA-II (multi-objective, maximization convention)."""
 
     name = "nsga2"
 
@@ -49,15 +49,15 @@ class NSGA2Tool:
         budget: int,
         rng: np.random.Generator | None = None,
     ) -> NSGA2Result:
-        """在预算内执行多目标优化。
+        """Run multi-objective optimization within the budget.
 
         Args:
-            problem: 优化问题
-            budget: 最大评估次数
-            rng: 随机数生成器
+            problem: Optimization problem
+            budget: Maximum number of evaluations
+            rng: Random number generator
 
         Returns:
-            NSGA2Result：最终非支配前沿、全局档案、超体积历史、评估次数
+            NSGA2Result: final non-dominated front, global archive, hypervolume history, evaluation count
         """
         if rng is None:
             rng = np.random.default_rng()
@@ -155,7 +155,7 @@ class NSGA2Tool:
     def _environmental_selection(
         self, ranks: np.ndarray, crowding: np.ndarray, k: int
     ) -> np.ndarray:
-        """按支配等级 + 拥挤度保留前 k 个个体。"""
+        """Keep the top k individuals by dominance rank and crowding distance."""
         order = np.lexsort((-crowding, ranks))
         return order[:k]
 
@@ -166,7 +166,7 @@ class NSGA2Tool:
         points_x: np.ndarray,
         points_obj: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """将新个体并入非支配档案（同时维护参数与目标）。"""
+        """Merge new individuals into the non-dominated archive (maintaining both parameters and objectives)."""
         merged_x = np.vstack([archive_x, points_x])
         merged_obj = np.vstack([archive_obj, points_obj])
         keep = non_dominated_front(merged_obj)

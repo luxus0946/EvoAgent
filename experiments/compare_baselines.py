@@ -1,12 +1,13 @@
-"""算法验证主实验：EvoAgent 进化框架 vs 基线算法（单目标 + 多目标）。
+"""Main algorithm verification experiment: EvoAgent evolution framework vs baseline algorithms (single- and multi-objective).
 
-单目标：半导体代理仿真 / Rosenbrock / Ackley / Rastrigin
-  基线（随机搜索/模拟退火/GA/CMA-ES/贝叶斯优化）固定预算 800 次评估；
-  EvoAgent 以 3 岛种群在固定单策略预算（300 次评估）上进化策略。
-指标：无噪声最终最优值（均值±标准差）、收敛曲线。
-多目标：ZDT1 / 半导体双目标（良率 vs 成本）
-  基线 NSGA-II（预算 800）vs EvoAgent 多目标模式。
-指标：超体积（共同参考点）、Pareto 前沿图。
+Single-objective: semiconductor surrogate / Rosenbrock / Ackley / Rastrigin
+  Baselines (random search / simulated annealing / GA / CMA-ES / Bayesian optimization)
+  use a fixed budget of 800 evaluations; EvoAgent evolves strategies over a 3-island
+  population with a fixed per-strategy budget (300 evaluations).
+  Metrics: noise-free final optimum (mean ± std), convergence curves.
+Multi-objective: ZDT1 / semiconductor bi-objective (yield vs cost)
+  Baseline NSGA-II (budget 800) vs EvoAgent multi-objective mode.
+  Metrics: hypervolume (shared reference point), Pareto front plots.
 """
 
 import argparse
@@ -31,7 +32,7 @@ from evoagent.utils.logger import new_log_file_path, setup_logger
 from evoagent.utils.random import make_rng, set_seed
 from evoagent.utils.visualization import plot_convergence_curves, plot_pareto_front
 
-# 单目标问题 -> (问题实例, 标量化权重)
+# Single-objective problems -> (problem instance, scalarization weights)
 SINGLE_OBJECTIVE_PROBLEMS: dict[str, tuple[object, np.ndarray | None]] = {
     "semiconductor": (SemiconductorSimulator(), np.array([0.5, 0.3, 0.2])),
     "rosenbrock": (BENCHMARK_REGISTRY["rosenbrock"](), None),
@@ -62,7 +63,7 @@ EVOAGENT_MO_CONFIG = dict(
 
 
 def run_single_objective(problem, weights, methods, seeds, output_dir, logger):
-    """单目标对比实验。"""
+    """Single-objective comparison experiment."""
     curves: dict[str, list[np.ndarray]] = {m: [] for m in methods}
     finals: dict[str, list[float]] = {m: [] for m in methods}
 
@@ -99,7 +100,7 @@ def run_single_objective(problem, weights, methods, seeds, output_dir, logger):
             finals[method].append(clean)
             curves[method].append(curve)
 
-    # 曲线重采样到统一评估次数网格（用于平均与绘图）
+    # Resample curves onto a common evaluation-count grid (for averaging and plotting)
     max_len = max(len(c) for m in methods for c in curves[m])
     grid = np.linspace(1, max_len, max_len).astype(int)
     mean_curves = {}
@@ -118,7 +119,7 @@ def run_single_objective(problem, weights, methods, seeds, output_dir, logger):
             "per_seed": [float(v) for v in arr],
         }
 
-    # 保存均值收敛曲线（可复现性）
+    # Save mean convergence curves (reproducibility)
     with (output_dir / f"single_{problem.name}_curves.csv").open("w", encoding="utf-8") as f:
         f.write("eval_count," + ",".join(methods) + "\n")
         for i in range(len(grid)):
@@ -134,7 +135,7 @@ def run_single_objective(problem, weights, methods, seeds, output_dir, logger):
 
 
 def run_multi_objective(problem, methods, seeds, output_dir, logger):
-    """多目标对比实验。"""
+    """Multi-objective comparison experiment."""
     final_hv: dict[str, list[float]] = {m: [] for m in methods}
     fronts: dict[str, list[np.ndarray]] = {m: [] for m in methods}
 
@@ -152,7 +153,7 @@ def run_multi_objective(problem, methods, seeds, output_dir, logger):
             else:
                 tool = NSGA2Tool()
                 result = tool.optimize(problem, NSGA2_BUDGET, rng=make_rng(seed))
-                # 用无噪声目标重算前沿，保证对比公平
+                # Recompute the front with noise-free objectives for a fair comparison
                 front = np.array(
                     [problem.objectives_clean(x) for x in result.archive_x]
                 )
@@ -164,7 +165,7 @@ def run_multi_objective(problem, methods, seeds, output_dir, logger):
                 "[%s] seed=%d 前沿点数=%d", method, seed, len(front),
             )
 
-    # 共同参考点：由两方法最终前沿并集确定
+    # Shared reference point: determined by the union of the two methods' final fronts
     merged = np.vstack([f for m in methods for f in fronts[m]])
     ref = reference_point(merged)
     logger.info("超体积参考点: %s", ref.tolist())
@@ -185,7 +186,7 @@ def run_multi_objective(problem, methods, seeds, output_dir, logger):
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="EvoAgent 算法验证实验")
+    parser = argparse.ArgumentParser(description="EvoAgent algorithm verification experiment")
     parser.add_argument("--seeds", type=int, default=3)
     parser.add_argument("--single-only", action="store_true")
     parser.add_argument("--mo-only", action="store_true")
@@ -253,7 +254,7 @@ def main() -> None:
 
 
 def _write_markdown_report(summary: dict, output_dir: Path) -> None:
-    """生成 Markdown 格式实验报告（含方法说明与结论）。"""
+    """Generate the Markdown experiment report (with method notes and conclusions)."""
     lines = [
         "# EvoAgent 算法验证报告",
         "",

@@ -1,4 +1,4 @@
-"""模拟退火工具：以概率接受劣解逃离局部最优。"""
+"""Simulated annealing tool: escapes local optima by probabilistically accepting worse solutions."""
 
 import numpy as np
 
@@ -7,12 +7,12 @@ from evoagent.tools.base import EarlyStopMonitor, OptimizationTool, ToolResult
 
 
 class SimulatedAnnealingTool(OptimizationTool):
-    """模拟退火。
+    """Simulated annealing.
 
-    超参（通过 strategy 基因可进化）：
-    - sa_t0: 初始温度（相对适应度尺度）
-    - sa_alpha: 冷却系数（每步乘性衰减）
-    - sa_sigma: 邻域扰动步长（相对参数范围）
+    Hyperparameters (evolvable via the strategy genome):
+    - sa_t0: Initial temperature (relative to the fitness scale)
+    - sa_alpha: Cooling coefficient (multiplicative decay per step)
+    - sa_sigma: Neighborhood perturbation step (relative to the parameter range)
     """
 
     name = "sa"

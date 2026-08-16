@@ -1,42 +1,47 @@
 # EvoAgent
 
-> 面向半导体工艺优化的自主进化多智能体系统（算法验证版）
+自主进化多智能体系统，以进化计算为核心范式求解半导体工艺参数优化与基准优化问题。
 
 [English README](./README.en.md)
 
-EvoAgent 以**进化计算为核心范式**：Agent 个体携带可进化的"优化策略基因"
-（工具选择、切换时机、超参），种群通过选择/交叉/变异/岛屿迁移不断进化出
-更优的策略。阶段一为**算法验证实现**（进化框架 vs 基线对比）；
-阶段二接入 **LLM Agent 层**：个体携带可进化的**提示词基因**
-（角色/思维风格/工具偏好/探索偏置），由 LLM 依据提示词 + RAG 知识库
-生成优化策略，进化驱动提示词的自我改进。
+## 系统简介
+
+每个 Agent 个体携带可进化的**优化策略基因**（工具选择、切换时机、超参），种群通过选择、交叉、变异与三岛环状迁移逐代提升策略质量。阶段二接入 LLM Agent 层：个体携带可进化的**提示词基因**（角色/思维风格/工具偏好/探索偏置），LLM 依据提示词与 RAG 知识库生成优化策略，进化驱动提示词自我改进。
+
+关键结果（半导体问题，真实 DeepSeek，3 seeds）：
+
+| 对比 | 结果 |
+|------|------|
+| 阶段一 vs 最优基线（CMA-ES） | +11.8%（semiconductor）；+84.3%/+76.7%/+73.6%（Rosenbrock/Ackley/Rastrigin） |
+| 阶段一多目标 vs NSGA-II（超体积） | +5.4%（ZDT1）、+16.7%（semiconductor_2obj） |
+| 阶段二提示词进化 vs 无 LLM 基线 / 固定提示词 | 0.0716 vs 0.0700（+2.3%）/ 0.0673（+6.4%） |
+| Meta 层：BO 自动配置进化超参 | +3.5% |
 
 ## 核心概念
 
 ```
 个体 = 可进化策略基因
-  ├── initial_tool / second_tool   两阶段工具选择（随机搜索/SA/GA/CMA-ES/BO）
-  ├── switch_after_ratio           何时切换工具
+  ├── initial_tool / second_tool   两阶段工具选择（随机搜索/SA/GA/CMA-ES/BO/PPO）
+  ├── switch_after_ratio           工具切换时机
   ├── stop_patience                早停耐心
-  └── tool_params                  各工具超参（可进化）
-  └── weights (多目标模式)          标量化权重基因
+  ├── tool_params                  各工具超参（可进化）
+  └── weights (多目标模式)         标量化权重基因
 
 种群 = 3 岛岛屿模型
   ├── 探索岛：高变异率(0.30) 低选择压力 → 全局搜索
   ├── 平衡岛：中变异率(0.15)
-  └── 利用岛：低变异率(0.05) 高选择压力 → 局部精调
+  ├── 利用岛：低变异率(0.05) 高选择压力 → 局部精调
   └── 环状迁移：每 3 代交换 Top 个体，防早熟收敛
 ```
 
-每个个体以固定评估预算在目标问题上执行一次完整优化（与基线同口径），
-适应度即该策略的执行效果；进化循环驱动策略质量的代际提升。
+每个个体以固定评估预算在目标问题上执行一次完整优化（与基线同口径），适应度即策略执行效果；进化循环驱动策略质量的代际提升。
 
 ## 快速开始
 
 ```bash
 pip install -r requirements.txt
 
-# 运行单元测试
+# 单元测试（133 个）
 python -m pytest tests/ -v
 
 # 单次进化实验（含收敛曲线与结果文件）
@@ -48,7 +53,7 @@ python experiments/compare_baselines.py --seeds 3
 # 阶段二：LLM 提示词进化实验（默认模拟 LLM，可复现、零成本）
 python experiments/run_llm_agent.py --llm mock --seeds 3
 
-# 使用真实 DeepSeek API（需先配置 .env，见 .env.example）
+# 真实 DeepSeek API（需先配置 .env，见 .env.example）
 python experiments/run_llm_agent.py --llm real --seeds 1
 
 # Meta 层：贝叶斯优化自动配置进化超参
@@ -56,23 +61,17 @@ python experiments/run_meta_search.py --problem semiconductor
 
 # REST API（FastAPI，后台任务队列）
 python -m uvicorn app.api:app --host 0.0.0.0 --port 8000
-curl http://localhost:8000/api/health
 
-# Gradio 演示界面（浏览器 http://127.0.0.1:7860）
+# Gradio 演示界面（http://127.0.0.1:7860）
 python app/gradio_app.py
 
 # Docker（API + UI 双服务）
 docker compose up --build
 ```
 
-结果输出至 `data/results/verification_*/`：
-- `summary.md`：自动生成的验证报告（含结论）
-- `summary.json`：结构化结果
-- `single_*_convergence.png`：收敛曲线对比
-- `mo_*_pareto_*.png`：Pareto 前沿图
-- `single_*_curves.csv`：均值收敛曲线数据
+结果输出至 `data/results/verification_*/`：`summary.md`（自动生成的验证报告）、`summary.json`、收敛曲线图与 CSV 数据。
 
-## 算法验证结果（2026-08-14，3 seeds）
+## 阶段一：进化框架验证（2026-08-14，3 seeds）
 
 ### 单目标（无噪声最终适应度，均值，越大越好）
 
@@ -96,21 +95,13 @@ docker compose up --build
 
 ![半导体收敛曲线](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/semiconductor_convergence.png)
 
-**结论**：EvoAgent 在所有测试问题上不劣于最佳单一算法，在含噪/多峰问题上
-（半导体、Rastrigin、Ackley、Rosenbrock）显著胜出，多次运行标准差最小；
-多目标模式超体积全面优于 NSGA-II。
+**结论**：EvoAgent 在所有测试问题上不劣于最佳单一算法，在含噪/多峰问题上显著胜出且多次运行标准差最小；多目标模式超体积全面优于 NSGA-II。
 
-### 对比口径说明
+**对比口径**：基线为单次固定预算 800 次评估；EvoAgent 为 3 岛 × 8 个体 × 10 代，单策略预算 300 次评估（与基线同口径），以并行策略尝试 + 进化选择换取更高样本利用与稳定性。半导体问题含高斯测量噪声（良率 σ=0.02），指标使用无噪声值重评。
 
-- 基线：单次固定预算 800 次评估；
-- EvoAgent：3 岛 × 8 个体 × 10 代，**单策略预算 300 次评估**（与基线同口径），
-  种群以并行策略尝试 + 进化选择换取更高样本利用与稳定性。
-- 半导体问题含高斯测量噪声（良率 σ=0.02），指标使用无噪声值重评。
+## 阶段二/三：LLM 提示词进化 + SEW 双模式（2026-08-16，真实 DeepSeek，3 seeds）
 
-# 阶段二/三：LLM 提示词进化 + SEW 双模式（2026-08-16，真实 DeepSeek API，3 seeds）
-
-半导体问题，权重 [0.5, 0.3, 0.2]，每模式 LLM 调用 42 次（6 个体 × 7 代），单策略预算 300，
-生成温度 0.4（低温度提升策略 JSON 生成稳定性，实测 0.7 → 0.4 使 llm_evolve 提升 0.059 → 0.072）：
+半导体问题，权重 [0.5, 0.3, 0.2]，每模式 42 次 LLM 调用（6 个体 × 7 代），单策略预算 300，生成温度 0.4（低温度提升策略 JSON 生成稳定性；实测 0.7 → 0.4 使 llm_evolve 从 0.059 提升至 0.072）：
 
 | 模式 | 均值 | 标准差 |
 |------|------|--------|
@@ -123,17 +114,13 @@ docker compose up --build
 
 ![提示词进化收敛曲线](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/llm_convergence.png)
 
-**结论**（真实 DeepSeek）：
-1. 提示词进化（llm_evolve）均值最优，领先阶段一无 LLM 基线 **+2.3%**（2/3 种子胜出），
-   领先固定提示词 **+6.4%**——LLM 提示词进化在真实模型上有效。
-2. SEW 双模式（structure + prompt 共存进化）未超过纯提示词进化：structure 通道占用一半
-   种群但收敛慢于 prompt 通道，在 8 维问题上收益不足；作为"策略基因 + 提示词基因联合进化"
-   的框架性探索保留在代码库中。
+**结论**：
+1. 提示词进化（llm_evolve）均值最优，领先无 LLM 基线 +2.3%（2/3 种子胜出）、领先固定提示词 +6.4%——提示词进化在真实模型上有效。
+2. SEW 双模式（structure + prompt 基因共存进化）未超过纯提示词进化：structure 通道占用一半种群但收敛较慢，在 8 维问题上收益不足；作为策略基因 + 提示词基因联合进化的框架性探索保留。
 
-## Meta 层：贝叶斯优化自动配置进化超参（2026-08-16，半导体）
+## Meta 层：BO 自动配置进化超参（2026-08-16，半导体）
 
-外层 BO（GP + EI）在超参空间搜索（种群规模/变异率/交叉率/选择压力/精英比例/迁移间隔/迁移率/个体预算），
-每次候选评估 = 用该超参跑 3 代内层进化实验（内层种子固定，评估确定可复现）：
+外层贝叶斯优化（GP + EI）在进化框架超参空间搜索（种群规模/变异率/交叉率/选择压力/精英比例/迁移间隔/迁移率/个体预算），每次候选评估运行一次内层短进化实验（固定内层种子，结果确定）：
 
 | 配置 | 均值 | 提升 |
 |------|------|------|
@@ -142,56 +129,49 @@ docker compose up --build
 
 ![Meta 超参搜索收敛对比](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/meta_convergence.png)
 
-**结论**：BO 找到 `pop=12 / mutation=0.29 / crossover=0.53 / selection_pressure=0.48 / elite=0.06 /
-migration_interval=4 / migration_rate=0.15 / budget=383` 的非默认组合，优于手工默认配置——
-进化算法可自动配置自身（"自主进化的进化算法"）。
+**结论**：BO 找到的非默认组合 `pop=12 / mutation=0.29 / crossover=0.53 / selection_pressure=0.48 / elite=0.06 / migration_interval=4 / migration_rate=0.15 / budget=383` 优于手工默认配置——进化算法可自动配置自身。
 
-## 相关工作（Related Work）
+## 相关工作
 
-EvoAgent 的设计与以下工作同属"LLM + 进化计算"研究脉络，并从中借鉴了
-岛屿模型、算子式变异、策略/提示词进化与记忆管理等思想：
+EvoAgent 与以下工作同属"LLM + 进化计算"研究脉络，并借鉴了岛屿模型、算子式变异、策略/提示词进化与记忆管理等思想：
 
 | 项目 | 出处 | 定位 | 与 EvoAgent 的关系 |
 |------|------|------|-------------------|
-| [FunSearch](https://github.com/google-deepmind/funsearch) | Google DeepMind（*Nature* 2023） | 用 LLM + 进化搜索程序代码 | 岛屿进化的思想源头之一：10 岛屿 + 聚类 softmax 采样 + 温度退火 + 周期重置防早熟（对应 EvoAgent 探索岛/利用岛分化） |
-| [EoH](https://github.com/FeiLiu36/EoH) | 华为诺亚方舟实验室 + 香港城市大学（ICML 2024） | LLM + 进化自动设计启发式算法，思想与代码双表示 | 最贴近"阶段二"精神：LLM 进化求解策略；其算子式变异（e1/e2/m1/m2/m3）与子进程隔离评估可移植到 EvoAgent 的提示词基因变异 |
-| [OpenEvolve](https://github.com/algorithmicsuperintelligence/openevolve) | AlphaEvolve 开源版（7k+★） | 岛屿进化 + LLM 集成 + 多目标 + 评估池 + 检查点的完整框架 | 架构高度相似（岛屿/迁移/LLM 生成-评估闭环）；其三路父代采样、MAP-Elites 特征坐标、级联评估与全状态检查点是 EvoAgent 后续阶段的主要借鉴对象 |
-| [EvoAgentX](https://github.com/wssnail/EvoAgentX) | 社区开源 | 自进化 Agent 工作流，集成 TextGrad / MIPRO / AFlow / SEW / EvoPrompt | 提示词/工作流进化一脉：组合式评估 + 节点级种群 + 图级工作流优化，是 EvoAgent 阶段三（LangGraph 编排）与 Meta 层搜索的模板 |
-| [SCOPE](https://github.com/JarvisPei/SCOPE) | 学术开源 | 从执行轨迹自动进化 Agent 提示，tactical/strategic 双层记忆 | 提示词基因进化的借鉴来源：Generator + Selector（Best-of-N）合成、冲突消解/蕴含剪枝/合并的记忆优化器，适用于 EvoAgent Meta 层超参规则沉淀 |
-
-> 注：上述仓库均已 fork 至 [github.com/luxus0946](https://github.com/luxus0946) 并在本地精读，
+| [FunSearch](https://github.com/google-deepmind/funsearch) | Google DeepMind（*Nature* 2023） | LLM + 进化搜索程序代码 | 岛屿进化的思想源头：10 岛屿 + 聚类 softmax 采样 + 温度退火 + 周期重置防早熟（对应 EvoAgent 探索/利用岛分化） |
+| [EoH](https://github.com/FeiLiu36/EoH) | 华为诺亚方舟 + 香港城市大学（ICML 2024） | LLM + 进化自动设计启发式算法，思想与代码双表示 | 最贴近阶段二：其算子式变异（e1/e2/m1/m2/m3）与子进程隔离评估可移植到 EvoAgent 的提示词基因变异 |
+| [OpenEvolve](https://github.com/algorithmicsuperintelligence/openevolve) | AlphaEvolve 开源版（7k+★） | 岛屿进化 + LLM + 多目标 + 评估池 + 检查点完整框架 | 架构高度相似（岛屿/迁移/LLM 生成-评估闭环）；三路父代采样、MAP-Elites 特征坐标、级联评估与全状态检查点是后续阶段主要借鉴对象 |
+| [EvoAgentX](https://github.com/wssnail/EvoAgentX) | 社区开源 | 自进化 Agent 工作流（TextGrad/MIPRO/AFlow/SEW/EvoPrompt） | 提示词/工作流进化一脉：组合式评估 + 节点级种群 + 图级工作流优化，是阶段三（LangGraph 编排）与 Meta 层搜索的模板 |
+| [SCOPE](https://github.com/JarvisPei/SCOPE) | 学术开源 | 从执行轨迹自动进化 Agent 提示，tactical/strategic 双层记忆 | 提示词基因进化的借鉴来源：Generator + Selector（Best-of-N）合成、冲突消解/蕴含剪枝/合并的记忆优化器 |
 
 ## 代码结构
 
 ```
 evoagent/
 ├── environment/   # 第1层：半导体代理仿真 + 标准 Benchmark + 适应度（加权/Pareto/超体积）
-├── core/          # 第2层：Agent 个体与可进化策略基因 + 可进化提示词基因（genome_prompt）
-├── evolution/     # 第3层：进化算子（含 EoH 算子）、种群、MAP-Elites 档案、检查点、岛屿模型、进化循环 + LLM 种群（SEW 双模式）
-├── meta/          # Meta 层：贝叶斯优化自动配置进化超参（超参空间编码 + 内层进化评估）
-├── agent/         # 第4层（阶段二）：LLM 客户端（OpenAI/模拟）、提示词模板、策略生成、RAG 知识库、Agent 工作流（过程式 + LangGraph 状态图双实现）
-├── tools/         # 优化工具池：随机搜索/模拟退火/GA/CMA-ES/贝叶斯优化/NSGA-II/PPO（numpy 自研）
+├── core/          # 第2层：Agent 个体 + 可进化策略基因 + 可进化提示词基因
+├── evolution/     # 第3层：进化算子（含 EoH 算子）、种群、MAP-Elites、检查点、岛屿模型、进化循环 + LLM 种群（SEW 双模式）
+├── meta/          # Meta 层：贝叶斯优化自动配置进化超参
+├── agent/         # 第4层：LLM 客户端（OpenAI/模拟）、提示词模板、策略生成、RAG、工作流（过程式 + LangGraph 状态图）
+├── tools/         # 优化工具池：随机搜索/SA/GA/CMA-ES/BO/NSGA-II/PPO（numpy 自研）
 ├── config.py      # 全局配置（含 LLMConfig）
 └── utils/         # 日志、随机种子、可视化
 app/               # 第5层：FastAPI REST 服务（任务队列）+ Gradio 演示界面
 experiments/       # run_evolution / compare_baselines / run_llm_agent / run_meta_search / make_readme_figures
-tests/             # 133 个单元测试（含 agent 层、检查点、MAP-Elites、EoH 算子、SEW 双模式、Meta 层、API、LangGraph、PPO）
+tests/             # 133 个单元测试
 Dockerfile / docker-compose.yml   # API + UI 双服务容器化
 ```
 
 ## 路线图
 
-- [x] 阶段一：核心进化框架（环境/基因/算子/种群/岛屿/工具池）
-- [x] 单目标 + Pareto 多目标验证实验与报告
-- [x] 阶段二：LLM Agent 层（openai 直连 DeepSeek）+ 可进化提示词基因
-- [x] 阶段二验证：提示词进化 vs 固定提示词 vs 阶段一（同 LLM 调用口径）
-- [x] 阶段三（核心四项）：全状态检查点 + 三路父代采样/MAP-Elites + EoH 算子式变异 + SEW 双模式
-- [x] Meta 层：贝叶斯优化自动配置进化超参（半导体 +3.5%）
+- [x] 阶段一：核心进化框架（环境/基因/算子/种群/岛屿/工具池）+ 单/多目标验证实验
+- [x] 阶段二：LLM Agent 层（OpenAI 兼容直连 DeepSeek）+ 可进化提示词基因 + 验证实验
+- [x] 阶段三：全状态检查点 + 三路父代采样/MAP-Elites + EoH 算子式变异 + SEW 双模式
+- [x] Meta 层：贝叶斯优化自动配置进化超参（+3.5%）
+- [x] 阶段四：LangGraph 状态图编排（LLM 失败重试 → 随机兜底）+ PPO 强化学习工具（numpy 手写，GAE + 裁剪目标）
 - [x] 阶段五：FastAPI REST 服务（后台任务队列）+ Gradio 演示界面 + Docker
-- [x] 阶段四：LangGraph 状态图编排（LLM 失败重试→随机兜底）+ PPO 强化学习工具（numpy 手写，GAE+裁剪目标）
 
 ## 可复现性
 
 - 所有实验记录随机种子，同一配置多次运行结果一致（已验证）；
 - 对比实验使用相同种子序列；
-- 噪声为确定性函数（每个参数点的测量噪声固定），保证结果可精确复现。
+- 噪声为确定性函数（每个参数点的测量噪声固定），结果可精确复现。

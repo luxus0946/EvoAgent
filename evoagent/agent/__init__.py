@@ -1,1 +1,1 @@
-"""Agent 层：LLM 客户端、提示词模板、策略生成、知识库与工作流。"""
+"""Agent layer: LLM client, prompt templates, strategy generation, knowledge base, and workflows."""

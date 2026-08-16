@@ -1,14 +1,14 @@
-"""LLM Agent 种群：进化可进化提示词基因（阶段二）+ SEW 双模式（阶段三④）。
+"""LLM agent population: evolves evolvable prompt genomes (phase 2) + SEW dual modes (phase 3, step 4).
 
-与 StrategyPopulation 的差异：
-- 个体携带 EvolvablePrompt 基因（角色/思维/工具偏好/探索偏置等）
-- 评估通过 AgentWorkflow：LLM 依据提示词生成策略并执行
-- 交叉/变异作用于提示词基因，进化驱动提示词的自我改进
+Differences from StrategyPopulation:
+- individuals carry EvolvablePrompt genomes (role/thinking style/tool preference/exploration bias, etc.)
+- evaluation goes through AgentWorkflow: the LLM generates and executes a strategy from the prompt
+- crossover/mutation act on prompt genomes; evolution drives self-improvement of the prompts
 
-SEW 双模式（借鉴 EvoAgentX）：种群中可同时存在
-- prompt 模式个体：基因是 EvolvablePrompt，进化提示词
-- structure 模式个体：基因是 StrategyGenome，进化策略结构本身（EoH 算子）
-两种模式共用同一 LLM 工作流，按各自基因进化。
+SEW dual modes (inspired by EvoAgentX): the population can simultaneously contain
+- prompt-mode individuals: genome is EvolvablePrompt, evolving prompts
+- structure-mode individuals: genome is StrategyGenome, evolving the strategy structure itself (EoH operators)
+Both modes share the same LLM workflow and evolve according to their own genomes.
 """
 
 import numpy as np
@@ -27,7 +27,7 @@ from evoagent.evolution.population import Population
 
 
 class LlmPopulation:
-    """LLM Agent 种群：进化提示词基因。"""
+    """LLM agent population: evolves prompt genomes."""
 
     def __init__(
         self,
@@ -43,20 +43,20 @@ class LlmPopulation:
         initial_prompt: EvolvablePrompt | None = None,
         sew_ratio: float = 0.0,
     ):
-        """初始化。
+        """Initialize.
 
         Args:
-            problem: 优化问题
-            size: 种群大小
-            seed: 随机种子
-            workflow: Agent 工作流
-            mutation_rate: 提示词变异率
-            selection_pressure: 选择压力
-            crossover_rate: 交叉率
-            elite_ratio: 精英保留比例
-            fixed_prompt: 是否固定提示词（基线模式，不做进化）
-            initial_prompt: 初始提示词（None 时随机生成）
-            sew_ratio: SEW 双模式中 structure 型个体占比（0 表示纯 prompt 模式）
+            problem: optimization problem
+            size: population size
+            seed: random seed
+            workflow: agent workflow
+            mutation_rate: prompt mutation rate
+            selection_pressure: selection pressure
+            crossover_rate: crossover rate
+            elite_ratio: elite retention ratio
+            fixed_prompt: whether to fix the prompt (baseline mode, no evolution)
+            initial_prompt: initial prompt (randomly generated when None)
+            sew_ratio: share of structure-mode individuals in SEW dual mode (0 means pure prompt mode)
         """
         self.problem = problem
         self.size = size
@@ -104,10 +104,10 @@ class LlmPopulation:
             inds.append(ind)
         return inds
 
-    # ------------------------------------------------------------ 评估
+    # ------------------------------------------------------------ evaluation
 
     def evaluate_all(self) -> None:
-        """通过 Agent 工作流评估所有个体（structure 型走中性提示通道）。"""
+        """Evaluate all individuals via the agent workflow (structure mode goes through the neutral prompt channel)."""
         for i, ind in enumerate(self.individuals):
             if ind.mode == "structure":
                 result_ind = self.workflow.run(
@@ -126,24 +126,24 @@ class LlmPopulation:
             ind.n_improvements = result_ind.n_improvements
         self.best_history.append(self.best_individual().fitness)
 
-    # ------------------------------------------------------------ 统计
+    # ------------------------------------------------------------ statistics
 
     def best_individual(self) -> AgentIndividual:
-        """返回适应度最高的个体。"""
+        """Return the individual with the highest fitness."""
         return max(self.individuals, key=lambda ind: ind.fitness)
 
     def mean_fitness(self) -> float:
-        """种群平均适应度。"""
+        """Mean population fitness."""
         return float(np.mean([ind.fitness for ind in self.individuals]))
 
     def best_prompt(self) -> EvolvablePrompt:
-        """返回当前最优提示词基因。"""
+        """Return the current best prompt genome."""
         return self.best_individual().genome_prompt
 
-    # ------------------------------------------------------------ 进化
+    # ------------------------------------------------------------ evolution
 
     def next_generation(self) -> None:
-        """选择 -> 各自基因交叉/变异 -> 精英保留，推进一代。"""
+        """Select, crossover/mutate each genome type, retain elites, and advance one generation."""
         sorted_ind = sorted(self.individuals, key=lambda ind: ind.fitness, reverse=True)
         n_elite = max(1, int(self.size * self.elite_ratio))
         n_parents = max(2, int(self.size * self.selection_pressure))
@@ -181,7 +181,7 @@ class LlmPopulation:
     def _breed_structure(
         self, parents: list[AgentIndividual], k: int
     ) -> list[AgentIndividual]:
-        """structure 模式繁殖：策略基因交叉 + EoH 算子式变异。"""
+        """Structure-mode breeding: strategy genome crossover + EoH operator-style mutation."""
         children: list[AgentIndividual] = []
         while len(children) < k:
             p1, p2 = parents[self.rng.integers(len(parents))], parents[
@@ -200,7 +200,7 @@ class LlmPopulation:
     def _breed_prompt(
         self, parents: list[AgentIndividual], k: int
     ) -> list[AgentIndividual]:
-        """prompt 模式繁殖：提示词基因交叉 + 变异。"""
+        """Prompt-mode breeding: prompt genome crossover + mutation."""
         children: list[AgentIndividual] = []
         while len(children) < k:
             p1, p2 = parents[self.rng.integers(len(parents))], parents[
@@ -224,7 +224,7 @@ class LlmPopulation:
         return children
 
     def _new_individual(self, prompt: EvolvablePrompt) -> AgentIndividual:
-        """用固定提示词创建新个体（基线模式）。"""
+        """Create a new individual with a fixed prompt (baseline mode)."""
         return AgentIndividual(
             agent_id=f"llm-f{self.generation}-{self.rng.integers(10000)}",
             genome=None,
@@ -234,7 +234,7 @@ class LlmPopulation:
     def _tournament(
         self, sorted_ind: list[AgentIndividual], k: int
     ) -> list[AgentIndividual]:
-        """锦标赛选择父代（组内仅剩 1 个时降级为重复选择）。"""
+        """Tournament selection of parents (falls back to repeated selection when only one individual remains in the group)."""
         if len(sorted_ind) < 2:
             return list(sorted_ind) * k
         selected: list[AgentIndividual] = []

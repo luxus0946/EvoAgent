@@ -1,4 +1,4 @@
-"""遗传算法工具：实数编码，锦标赛选择 + 均匀交叉 + 高斯变异，μ+λ 精英策略。"""
+"""Genetic algorithm tool: real-coded, tournament selection + uniform crossover + Gaussian mutation, mu+lambda elitism."""
 
 import numpy as np
 
@@ -7,12 +7,12 @@ from evoagent.tools.base import EarlyStopMonitor, OptimizationTool, ToolResult
 
 
 class GATool(OptimizationTool):
-    """实数编码遗传算法。
+    """Real-coded genetic algorithm.
 
-    超参（可通过策略基因进化）：
-    - mutation_rate: 高斯变异概率
-    - crossover_rate: 均匀交叉概率
-    - population_size: 种群大小（<=0 时按预算自适应）
+    Hyperparameters (evolvable via the strategy genome):
+    - mutation_rate: Gaussian mutation probability
+    - crossover_rate: Uniform crossover probability
+    - population_size: Population size (<= 0 adapts to the budget)
     """
 
     name = "ga"
@@ -101,7 +101,7 @@ class GATool(OptimizationTool):
         span: np.ndarray,
         rng: np.random.Generator,
     ) -> np.ndarray:
-        """锦标赛选择父代 + 均匀交叉 + 高斯变异生成子代。"""
+        """Generate offspring via tournament parent selection, uniform crossover, and Gaussian mutation."""
         offspring = np.empty((size, problem.dim))
         for j in range(size):
             p1 = self._tournament(pop, fitness, rng)

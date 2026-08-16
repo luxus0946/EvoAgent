@@ -1,7 +1,7 @@
-"""Agent 个体与可进化策略基因（算法验证版）。
+"""Agent individual and evolvable strategy genome.
 
-个体 = 一个可进化的优化策略：选择初始工具、切换时机、早停耐心与工具超参。
-个体在仿真环境上执行该策略得到适应度，种群进化驱动策略的自我改进。
+An individual is an evolvable optimization strategy: choice of initial tool, switch timing, early-stop patience, and tool hyperparameters.
+An individual runs the strategy on the simulated environment to obtain fitness; population evolution drives self-improvement of the strategy.
 """
 
 import uuid
@@ -12,7 +12,7 @@ import numpy as np
 from evoagent.environment.fitness import normalize_weights
 from evoagent.tools.base import TOOL_NAMES
 
-# 连续基因字段的参数范围（变异时保证落在界内）
+# Parameter ranges for continuous genome fields (mutations are clamped to valid bounds)
 _TOOL_PARAM_RANGES: dict[str, tuple[float, float]] = {
     "cma_sigma": (0.05, 0.5),
     "ga_mutation": (0.02, 0.4),
@@ -28,7 +28,7 @@ _TOOL_PARAM_RANGES: dict[str, tuple[float, float]] = {
 
 @dataclass
 class StrategyGenome:
-    """可进化策略基因。"""
+    """Evolvable strategy genome."""
 
     initial_tool: str = "cma_es"
     second_tool: str = "bo"
@@ -50,7 +50,7 @@ class StrategyGenome:
     weights: np.ndarray | None = None
 
     def clone(self) -> "StrategyGenome":
-        """深拷贝基因。"""
+        """Deep-copy the genome."""
         return StrategyGenome(
             initial_tool=self.initial_tool,
             second_tool=self.second_tool,
@@ -63,7 +63,7 @@ class StrategyGenome:
 
 @dataclass
 class AgentIndividual:
-    """Agent 个体。"""
+    """Agent individual."""
 
     agent_id: str
     genome: StrategyGenome
@@ -78,7 +78,7 @@ class AgentIndividual:
     mode: str = "prompt"
 
     def clone(self) -> "AgentIndividual":
-        """深拷贝个体（含评估结果字段，供迁移等场景保留适应度）。"""
+        """Deep-copy the individual (including evaluation result fields, so fitness is preserved for migration and similar scenarios)."""
         clone_prompt = (
             None if self.genome_prompt is None else self.genome_prompt.clone()
         )
@@ -98,14 +98,14 @@ class AgentIndividual:
 
 
 def random_genome(rng: np.random.Generator, n_objectives: int = 1) -> StrategyGenome:
-    """随机生成一个策略基因。
+    """Generate a random strategy genome.
 
     Args:
-        rng: 随机数生成器
-        n_objectives: 目标数量（>1 时随机生成权重向量）
+        rng: random number generator
+        n_objectives: number of objectives (a random weight vector is generated when > 1)
 
     Returns:
-        随机策略基因
+        a random strategy genome
     """
     tools = rng.choice(TOOL_NAMES, size=2, replace=True)
     tool_params = {
@@ -129,7 +129,7 @@ def random_genome(rng: np.random.Generator, n_objectives: int = 1) -> StrategyGe
 def random_individual(
     rng: np.random.Generator, n_objectives: int = 1
 ) -> AgentIndividual:
-    """随机生成一个 Agent 个体。"""
+    """Generate a random agent individual."""
     return AgentIndividual(
         agent_id=str(uuid.uuid4())[:8],
         genome=random_genome(rng, n_objectives),
@@ -137,5 +137,5 @@ def random_individual(
 
 
 def make_rng_derived(agent_id: str, seed: int) -> np.random.Generator:
-    """从个体 ID 派生独立 RNG（保证策略评估可复现）。"""
+    """Derive an independent RNG from the individual ID (ensures reproducible strategy evaluation)."""
     return np.random.default_rng(int(seed) + sum(ord(c) for c in agent_id))

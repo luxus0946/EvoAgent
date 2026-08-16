@@ -1,13 +1,13 @@
-"""生成 README 用结果图（figures/），IEEE 学术风格。
+"""Generate README result figures (figures/), in IEEE academic style.
 
-约定（IEEE Transactions 惯例）：
-- serif 字体（Times New Roman 优先）、无网格、仅左/下坐标轴
-- 图内无标题（caption 在文档中）、图例无边框且避开数据
-- 色盲友好高对比配色、300 dpi
-- 数值标注置于图形元素上方留白处，避免与数据/误差线重叠
+Conventions (IEEE Transactions practice):
+- serif fonts (Times New Roman preferred), no grid, only left/bottom axes
+- no in-figure titles (captions live in the document), borderless legends kept clear of data
+- colorblind-friendly high-contrast palette, 300 dpi
+- numeric annotations placed in whitespace above graphical elements to avoid overlap with data/error bars
 
-输入：data/results 下已完成的实验 CSV/JSON。
-输出：figures/*.png（提交到仓库，供中英文 README 使用）。
+Input: completed experiment CSV/JSON under data/results.
+Output: figures/*.png (committed to the repo, for both Chinese and English READMEs).
 """
 
 import json
@@ -28,7 +28,7 @@ LLM_DIR = ROOT / "data" / "results" / "llm_agent_20260816_205230"
 META_DIR = ROOT / "data" / "results" / "meta_20260816_190602"
 OUT = ROOT / "figures"
 
-# IEEE 风格色盲友好配色（Okabe-Ito）
+# IEEE-style colorblind-friendly palette (Okabe-Ito)
 C_RED = "#D55E00"
 C_BLUE = "#0072B2"
 C_GREEN = "#009E73"
@@ -81,18 +81,18 @@ def _style() -> None:
 
 
 def _legend(ax, loc: str = "best", ncol: int = 1) -> None:
-    """IEEE 图例：无边框，透明背景。"""
+    """IEEE legend: borderless, transparent background."""
     ax.legend(loc=loc, frameon=False, handlelength=2.2, borderaxespad=0.3, ncol=ncol)
 
 
 def _legend_below(ax, ncol: int = 3) -> None:
-    """图例置于轴外下方（横向），避免遮挡任何数据。"""
+    """Legend below the axes (horizontal), avoiding any data overlap."""
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=ncol,
               frameon=False, handlelength=2.0, columnspacing=1.4)
 
 
 def single_objective_chart() -> None:
-    """单目标：EvoAgent vs 最佳基线（相对提升率标注）。"""
+    """Single-objective: EvoAgent vs best baseline (annotated with relative improvement)."""
     data = [
         ("semiconductor", 0.074566, 0.066693, "+11.8%"),
         ("rosenbrock", -19.888, -126.325, "+84.3%"),
@@ -107,7 +107,7 @@ def single_objective_chart() -> None:
     ax.bar(x + w / 2, [d[2] for d in data], w, label="Best baseline (CMA-ES)", color=C_BLUE, edgecolor="none")
     for i, (_, ev, bs, improve) in enumerate(data):
         top = max(ev, bs)
-        # 数值标注放在两组柱上方的留白处，符号与柱方向一致避免重叠
+        # Value labels placed in whitespace above the bar pair; sign matches bar direction to avoid overlap
         offset = 0.045 * (abs(top) + 0.6)
         ax.text(x[i], top + offset, improve, ha="center", va="bottom",
                 fontsize=8.5, color=C_BLACK)
@@ -123,7 +123,7 @@ def single_objective_chart() -> None:
 
 
 def multi_objective_chart() -> None:
-    """多目标：超体积对比。"""
+    """Multi-objective: hypervolume comparison."""
     data = [
         ("zdt1", 0.995074, 0.944246, "+5.4%"),
         ("semiconductor_2obj", 0.141663, 0.121431, "+16.7%"),
@@ -148,7 +148,7 @@ def multi_objective_chart() -> None:
 
 
 def phase2_chart() -> None:
-    """阶段二/三：提示词进化 vs SEW 双模式 vs 固定提示词 vs 阶段一（真实 DeepSeek）。"""
+    """Phase 2/3: prompt evolution vs SEW dual-mode vs fixed prompt vs phase 1 (real DeepSeek)."""
     modes = ["llm_evolve", "llm_sew", "llm_fixed", "phase1"]
     labels = [
         "LLM evolve\n(evolved prompts)",
@@ -163,7 +163,7 @@ def phase2_chart() -> None:
     fig, ax = plt.subplots(figsize=(6.8, 3.8))
     bars = ax.bar(x, means, yerr=stds, capsize=3.5, width=0.58,
                   color=colors, edgecolor="none", error_kw=dict(lw=0.9))
-    # 领先标注：条形顶端上方留白，无箭头避免遮挡
+    # Leading annotation: whitespace above bar top, no arrows to avoid occlusion
     ax.text(0, means[0] + stds[0] + 0.004, "+2.3% vs phase1",
             ha="center", va="bottom", fontsize=8.5, color=C_BLACK)
     ax.set_xticks(x)
@@ -176,7 +176,7 @@ def phase2_chart() -> None:
 
 
 def convergence_charts() -> None:
-    """半导体收敛曲线（阶段一）与 LLM 收敛曲线（阶段二）。"""
+    """Semiconductor convergence (phase 1) and LLM convergence (phase 2)."""
     df = np.loadtxt(VERIFY_DIR / "single_semiconductor_curves.csv", delimiter=",", skiprows=1)
     x = df[:, 0]
     fig, ax = plt.subplots(figsize=(6.8, 4.0))
@@ -208,7 +208,7 @@ def convergence_charts() -> None:
 
 
 def meta_chart() -> None:
-    """Meta 层：默认超参 vs BO 最优超参收敛对比。"""
+    """Meta layer: default hyperparameters vs BO-optimized hyperparameters convergence."""
     df = np.loadtxt(META_DIR / "meta_curves.csv", delimiter=",", skiprows=1) if (META_DIR / "meta_curves.csv").exists() else None
     if df is None:
         return

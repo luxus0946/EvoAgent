@@ -1,4 +1,4 @@
-"""PPO 工具测试：RL 优化器正确性 + 相对基线效果 + 解析梯度校验。"""
+"""PPO tool tests: RL optimizer correctness + effect vs baseline + analytic gradient check."""
 
 import numpy as np
 import pytest
@@ -40,7 +40,7 @@ class TestPPOToolBasics:
 
 
 class TestPPOEffectiveness:
-    """RL 学习证据：Ackley 上 PPO 应显著优于随机搜索（300 预算）。"""
+    """RL learning evidence: PPO should clearly beat random search on Ackley (budget 300)."""
 
     def test_ppo_beats_random_search(self):
         p = AckleyProblem()
@@ -57,7 +57,7 @@ class TestPPOEffectiveness:
 
 
 class TestPPOGradients:
-    """解析梯度 vs 数值梯度（PPO 裁剪目标）。"""
+    """Analytic gradients vs numeric gradients (PPO clipped objective)."""
 
     @staticmethod
     def _make(net: _PPONetworks, s: np.ndarray, a: np.ndarray, logp_old: np.ndarray, adv: np.ndarray):
@@ -66,7 +66,7 @@ class TestPPOGradients:
 
     @staticmethod
     def _loss(net: _PPONetworks, s: np.ndarray, a: np.ndarray, logp_old: np.ndarray, adv: np.ndarray) -> float:
-        """PPO 目标 L = min(r*A, clip(r)*A)，按 adv 符号正确取分支。"""
+        """PPO objective L = min(r*A, clip(r)*A), taking the correct branch per adv sign."""
         _, m = _mlp_forward(s, net.w1, net.b1, net.w2, net.b2)
         lp = -0.5 * np.sum(((a - m) / np.exp(net.log_std)) ** 2, axis=1) - np.sum(net.log_std)
         ratio = np.exp(lp - logp_old)
@@ -92,7 +92,7 @@ class TestPPOGradients:
             ("b2", gb2, net.b2.shape),
             ("log_std", gls, net.log_std.shape),
         ]:
-            # 梯度以 2 倍数值梯度范数校正（除以样本数后量级小）
+            # Gradients corrected by 2x numeric gradient norm (small magnitude after sample averaging)
             grad_flat = grad.ravel()
             num_flat = np.zeros_like(grad_flat)
             for i in range(grad_flat.size):

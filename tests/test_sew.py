@@ -1,4 +1,4 @@
-"""SEW 双模式（structure + prompt）测试。"""
+"""SEW dual-mode (structure + prompt) tests."""
 
 import numpy as np
 import pytest

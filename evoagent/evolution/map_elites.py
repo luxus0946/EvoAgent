@@ -1,16 +1,16 @@
-"""MAP-Elites 特征档案（借鉴 OpenEvolve database.py 的特征坐标 + 精英网格）。
+"""MAP-Elites feature archive (inspired by the feature coordinates and elite grid of OpenEvolve database.py).
 
-每个个体按特征坐标落入网格 cell，每格只保留精英（同格内更优者替换），
-为父代采样提供"质量 x 多样性"的档案：
-- 特征维度 1：策略利用度（工具组合的探索/利用倾向）
-- 特征维度 2：最终适应度分位 bin
+Each individual falls into a grid cell by its feature coordinates; each cell keeps only its elite (a better individual in the same cell replaces the current one),
+providing a "quality x diversity" archive for parent sampling:
+- feature dimension 1: strategy exploitation level (exploration/exploitation tendency of the tool combination)
+- feature dimension 2: final fitness quantile bin
 """
 
 import numpy as np
 
 from evoagent.core.individual import AgentIndividual
 
-# 工具倾向分数：0=纯探索, 1=纯利用
+# Tool tendency score: 0 = pure exploration, 1 = pure exploitation
 _TOOL_TENDENCY: dict[str, float] = {
     "random_search": 0.0,
     "sa": 0.25,
@@ -26,14 +26,14 @@ def feature_coords(
     individual: AgentIndividual,
     bins: tuple[int, int] = DEFAULT_BINS,
 ) -> tuple[int, int]:
-    """计算个体的 MAP-Elites 特征坐标。
+    """Compute the MAP-Elites feature coordinates of an individual.
 
     Args:
-        individual: 已评估的个体
-        bins: 两个维度的分箱数
+        individual: evaluated individual
+        bins: number of bins per dimension
 
     Returns:
-        (利用度 bin, 适应度 bin)
+        (exploitation bin, fitness bin)
     """
     genome = individual.genome
     tendency = (
@@ -46,19 +46,19 @@ def feature_coords(
 
 
 class MapElitesArchive:
-    """MAP-Elites 精英档案：按特征网格保留每格最优个体。"""
+    """MAP-Elites elite archive: keeps the best individual per cell of the feature grid."""
 
     def __init__(self, bins: tuple[int, int] = DEFAULT_BINS):
-        """初始化。
+        """Initialize.
 
         Args:
-            bins: 特征网格各维度分箱数
+            bins: number of bins per feature grid dimension
         """
         self.bins = bins
         self.grid: dict[tuple[int, int], AgentIndividual] = {}
 
     def add(self, individual: AgentIndividual) -> None:
-        """尝试将个体放入网格（仅当该格为空或个体更优）。"""
+        """Try to insert an individual into the grid (only if the cell is empty or the individual is better)."""
         if individual.fitness is None:
             return
         coords = feature_coords(individual, self.bins)
@@ -67,23 +67,23 @@ class MapElitesArchive:
             self.grid[coords] = individual.clone()
 
     def add_many(self, individuals: list[AgentIndividual]) -> None:
-        """批量加入。"""
+        """Insert multiple individuals."""
         for ind in individuals:
             self.add(ind)
 
     def sample_elite(self, rng: np.random.Generator) -> AgentIndividual:
-        """随机抽取一个非空格的精英个体。"""
+        """Sample an elite individual from a random non-empty cell."""
         if not self.grid:
             raise ValueError("档案为空")
         coords = rng.choice(list(self.grid.keys()))
         return self.grid[tuple(coords)]
 
     def size(self) -> int:
-        """当前非空格数。"""
+        """Number of currently non-empty cells."""
         return len(self.grid)
 
     def best(self) -> AgentIndividual:
-        """档案中的全局最优。"""
+        """Global best in the archive."""
         if not self.grid:
             raise ValueError("档案为空")
         return max(self.grid.values(), key=lambda ind: ind.fitness)

@@ -1,4 +1,4 @@
-"""可视化：收敛曲线与 Pareto 前沿图。"""
+"""Visualization: convergence curves and Pareto front plots."""
 
 from pathlib import Path
 
@@ -19,14 +19,14 @@ def plot_convergence_curves(
     xlabel: str = "评估次数",
     ylabel: str = "最优适应度",
 ) -> None:
-    """绘制多条收敛曲线对比图。
+    """Plot multiple convergence curves for comparison.
 
     Args:
-        curves: 方法名 -> 最优值随评估次数变化的曲线
-        title: 图标题
-        output_path: 保存路径（PNG）
-        xlabel: x 轴标签
-        ylabel: y 轴标签
+        curves: Method name -> best value over the number of evaluations
+        title: Plot title
+        output_path: Save path (PNG)
+        xlabel: X-axis label
+        ylabel: Y-axis label
     """
     plt.figure(figsize=(9, 6))
     for name, curve in curves.items():
@@ -47,13 +47,13 @@ def plot_pareto_front(
     output_path: str | Path,
     labels: tuple[str, str] = ("目标1", "目标2"),
 ) -> None:
-    """绘制二维 Pareto 前沿散点图。
+    """Plot a 2-D Pareto front scatter plot.
 
     Args:
-        points: 非支配点集，shape (n, 2)，最大化约定
-        title: 图标题
-        output_path: 保存路径（PNG）
-        labels: 两个目标的坐标轴标签
+        points: Non-dominated points, shape (n, 2), maximization convention
+        title: Plot title
+        output_path: Save path (PNG)
+        labels: Axis labels for the two objectives
     """
     plt.figure(figsize=(8, 6))
     plt.scatter(points[:, 0], points[:, 1], s=30, alpha=0.8)

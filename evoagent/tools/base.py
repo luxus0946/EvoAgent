@@ -1,6 +1,6 @@
-"""优化工具抽象基类与公共数据结构。
+"""Abstract base classes and shared data structures for optimization tools.
 
-所有工具统一签名：在给定评估预算内最大化加权标量适应度。
+All tools share a uniform signature: maximize the weighted scalar fitness within a given evaluation budget.
 """
 
 from abc import ABC, abstractmethod
@@ -10,13 +10,13 @@ import numpy as np
 
 from evoagent.environment.problem import OptimizationProblem
 
-# 工具注册表：策略基因与工具池共享的名称集合
+# Tool registry: name set shared by strategy genomes and the tool pool
 TOOL_NAMES = ["random_search", "sa", "ga", "cma_es", "bo", "ppo"]
 
 
 @dataclass
 class ToolResult:
-    """工具执行结果。"""
+    """Tool execution result."""
 
     best_params: np.ndarray
     best_fitness: float
@@ -26,36 +26,36 @@ class ToolResult:
 
     @property
     def last_improved_eval(self) -> int:
-        """最后一次改进发生的评估序号（1 起），未改进时为 0。"""
+        """Evaluation index (1-based) of the last improvement; 0 if never improved."""
         return self.n_improvements
 
 
 class EarlyStopMonitor:
-    """早停监视器：连续无改进达到阈值时通知工具提前终止。"""
+    """Early-stop monitor: notifies the tool to terminate early once consecutive non-improvement reaches the threshold."""
 
     def __init__(self, patience_evals: int):
-        """初始化。
+        """Initialize.
 
         Args:
-            patience_evals: 连续无改进容忍的评估次数，<=0 表示不启用
+            patience_evals: Number of consecutive non-improving evaluations tolerated; <= 0 disables early stopping
         """
         self.patience = patience_evals
         self._streak = 0
 
     @property
     def enabled(self) -> bool:
-        """是否启用早停。"""
+        """Whether early stopping is enabled."""
         return self.patience > 0
 
     def check(self, current: float, best: float) -> bool:
-        """评估一次迭代后检查是否需要终止。
+        """Check whether termination is required after one iteration.
 
         Args:
-            current: 当前适应度
-            best: 历史最优适应度
+            current: Current fitness
+            best: Historical best fitness
 
         Returns:
-            True 表示应终止
+            True if the run should terminate
         """
         if not self.enabled:
             return False
@@ -67,7 +67,7 @@ class EarlyStopMonitor:
 
 
 class OptimizationTool(ABC):
-    """优化工具抽象基类，所有工具必须继承此类。"""
+    """Abstract base class for optimization tools; all tools must inherit from it."""
 
     name: str = "base_tool"
 
@@ -81,17 +81,17 @@ class OptimizationTool(ABC):
         early_stop: EarlyStopMonitor | None = None,
         rng: np.random.Generator | None = None,
     ) -> ToolResult:
-        """在预算内执行优化（最大化加权标量适应度）。
+        """Run optimization within the budget (maximize the weighted scalar fitness).
 
         Args:
-            problem: 优化问题
-            budget: 最大评估次数
-            weights: 目标权重，None 时使用均匀权重
-            x_init: 初始参数（历史最优），None 时算法自行初始化
-            early_stop: 早停监视器，None 表示不启用
-            rng: 随机数生成器
+            problem: Optimization problem
+            budget: Maximum number of evaluations
+            weights: Objective weights; uniform weights are used when None
+            x_init: Initial parameters (historical best); the algorithm initializes itself when None
+            early_stop: Early-stop monitor; disabled when None
+            rng: Random number generator
 
         Returns:
-            ToolResult：最优参数、最优适应度、收敛曲线、评估次数
+            ToolResult: best parameters, best fitness, convergence history, evaluation count
         """
         raise NotImplementedError

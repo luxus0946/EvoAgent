@@ -1,12 +1,13 @@
-"""LangGraph 编排版 Agent 工作流：将提示词 → LLM → 策略 → 执行 建模为状态图。
+"""LangGraph-orchestrated Agent workflow: models prompt -> LLM -> strategy -> execution as a state graph.
 
-与 AgentWorkflow 的差异：工作流是显式的有向状态图（langgraph）——
-- 节点：知识检索 → 提示词构建 → LLM 调用 → 策略解析 → 策略执行
-- 条件边：LLM 失败自动重试（最多 2 次），仍失败则路由到随机策略兜底
-- 状态显式化：检索结果、提示词、LLM 原始输出、解析结果均可中途检查/替换
+Difference from AgentWorkflow: the workflow is an explicit directed state graph (langgraph) --
+- Nodes: knowledge retrieval -> prompt construction -> LLM call -> strategy parsing -> strategy execution
+- Conditional edges: LLM failures auto-retry (up to 2 times); persistent failures route to a random-strategy fallback
+- Explicit state: retrieval results, prompts, raw LLM output, and parsed results can be inspected or replaced mid-flow
 
-面试亮点：展示主流 LLM 编排框架（langgraph 状态图）与确定性工作流的等价性，
-以及"图路由"相对"过程式 if/else"的可视化与可插拔优势。
+Graph routing keeps the workflow modular: the same graph is used for SEW dual-mode
+and mock/real LLM backends, and LLM failure handling is a conditional edge rather
+than procedural if/else.
 """
 
 import logging
@@ -31,7 +32,7 @@ MAX_LLM_RETRIES = 2
 
 
 class GraphState(TypedDict, total=False):
-    """图状态：工作流各阶段产物的显式载体。"""
+    """Graph state: explicit carrier of artifacts produced at each workflow stage."""
 
     prompt: EvolvablePrompt | None
     seed: int | None
@@ -54,7 +55,7 @@ def build_workflow_graph(
     executor: StrategyExecutor | None = None,
     weights: np.ndarray | None = None,
 ) -> Any:
-    """构建 LangGraph 状态图（节点 + 条件边 + 路由）。"""
+    """Build the LangGraph state graph (nodes + conditional edges + routing)."""
     llm = llm or build_llm_client()
     knowledge_base = knowledge_base or KnowledgeBase()
     executor = executor or StrategyExecutor(problem, weights=weights)
@@ -86,7 +87,7 @@ def build_workflow_graph(
         try:
             data = timed_chat(llm, state["system_prompt"], state["user_prompt"])
             return {"llm_data": data, "error": None, "llm_retries": retries}
-        except Exception as e:  # noqa: BLE001 - LLM 失败由路由处理
+        except Exception as e:  # noqa: BLE001 - LLM failures are handled by routing
             logger.warning("LLM 调用失败（%s），第 %d 次重试", e, retries + 1)
             return {"error": str(e), "llm_retries": retries + 1}
 
@@ -142,7 +143,7 @@ def build_workflow_graph(
 
 
 class GraphWorkflow:
-    """LangGraph 编排版 Agent 工作流（接口与 AgentWorkflow 对齐）。"""
+    """LangGraph-orchestrated Agent workflow (interface aligned with AgentWorkflow)."""
 
     def __init__(
         self,
@@ -175,7 +176,7 @@ class GraphWorkflow:
         seed: int | None = None,
         mode: str = "prompt",
     ) -> AgentIndividual:
-        """执行一次完整图工作流（LLM 失败自动重试 → 随机兜底）。"""
+        """Run one complete graph workflow (LLM failures auto-retry, then fall back to random)."""
         result = self.app.invoke(
             {
                 "prompt": prompt,
@@ -192,5 +193,5 @@ class GraphWorkflow:
         return individual
 
     def reset_call_count(self) -> None:
-        """重置调用计数。"""
+        """Reset the call counter."""
         self.call_count = 0

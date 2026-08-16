@@ -1,4 +1,4 @@
-"""REST API 测试（FastAPI TestClient）。"""
+"""REST API tests (FastAPI TestClient)."""
 
 import pytest
 from fastapi.testclient import TestClient

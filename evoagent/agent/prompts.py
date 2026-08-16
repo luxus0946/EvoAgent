@@ -1,4 +1,4 @@
-"""提示词模板：将可进化提示词基因渲染为系统/用户提示。"""
+"""Prompt templates: render evolvable prompt genomes into system/user prompts."""
 
 from evoagent.core.genome_prompt import EvolvablePrompt
 from evoagent.environment.problem import OptimizationProblem
@@ -27,13 +27,13 @@ _PREFERENCE_TEXT = {
 
 
 def build_system_prompt(prompt: EvolvablePrompt | None) -> str:
-    """构建系统提示（角色 + 输出格式约束）。
+    """Build the system prompt (role + output format constraints).
 
     Args:
-        prompt: 可进化提示词基因（None 时使用中性角色，SEW 结构模式）
+        prompt: Evolvable prompt genome (None selects a neutral role for the SEW structure mode)
 
     Returns:
-        系统提示字符串
+        System prompt string
     """
     if prompt is None:
         role_text = "你是资深优化专家，熟悉各类全局优化算法。"
@@ -65,15 +65,15 @@ def build_user_prompt(
     problem: OptimizationProblem,
     knowledge: list[str] | None = None,
 ) -> str:
-    """构建用户提示（问题描述 + 知识库检索结果 + 偏好约束）。
+    """Build the user prompt (problem description + knowledge-base results + preference constraints).
 
     Args:
-        prompt: 可进化提示词基因（None 时省略基因约束段，SEW 结构模式）
-        problem: 优化问题
-        knowledge: 知识库检索结果
+        prompt: Evolvable prompt genome (None omits the genome constraint section for the SEW structure mode)
+        problem: Optimization problem
+        knowledge: Knowledge-base retrieval results
 
     Returns:
-        用户提示字符串
+        User prompt string
     """
     param_desc = "\n".join(
         f"- 参数 {i}: {PARAM_NAMES[i]}（归一化范围 [0, 1]）"

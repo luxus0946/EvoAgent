@@ -1,4 +1,4 @@
-"""Meta 层超参搜索测试。"""
+"""Meta-layer hyperparameter search tests."""
 
 import numpy as np
 import pytest

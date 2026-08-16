@@ -1,9 +1,9 @@
-"""Meta 层：进化算法的自动超参配置（AAC / Meta-Optimization）。
+"""Meta layer: automatic hyperparameter configuration of the evolution algorithm (AAC / Meta-Optimization).
 
-设计：
-- 超参空间（进化框架的可调旋钮）编码为连续/离散向量
-- 外层：贝叶斯优化（复用 BayesianOptTool）在超参空间搜索
-- 内层：每次候选评估 = 用该超参跑一次短进化实验，返回无噪声适应度
+Design:
+- the hyperparameter space (tunable knobs of the evolution framework) is encoded as a continuous/discrete vector
+- outer loop: Bayesian optimization (reusing BayesianOptTool) searches the hyperparameter space
+- inner loop: each candidate evaluation = one short evolution experiment with those hyperparameters, returning noise-free fitness
 """
 
 import logging
@@ -21,7 +21,7 @@ logger = logging.getLogger("evoagent.meta")
 
 @dataclass
 class HyperparamSpec:
-    """单个超参数定义。"""
+    """Definition of a single hyperparameter."""
 
     name: str
     low: float
@@ -31,7 +31,7 @@ class HyperparamSpec:
 
 @dataclass
 class MetaSearchSpace:
-    """进化框架超参搜索空间（默认覆盖关键旋钮）。"""
+    """Hyperparameter search space of the evolution framework (defaults cover key knobs)."""
 
     specs: list[HyperparamSpec] = field(
         default_factory=lambda: [
@@ -48,16 +48,16 @@ class MetaSearchSpace:
 
     @property
     def names(self) -> list[str]:
-        """超参名列表。"""
+        """List of hyperparameter names."""
         return [s.name for s in self.specs]
 
     @property
     def bounds(self) -> np.ndarray:
-        """超参边界矩阵（shape (n, 2)）。"""
+        """Hyperparameter bounds matrix (shape (n, 2))."""
         return np.array([[s.low, s.high] for s in self.specs])
 
     def to_config(self, x: np.ndarray) -> dict:
-        """超参向量 -> EvolutionConfig 关键字参数字典（int 取整、裁剪）。"""
+        """Map a hyperparameter vector to an EvolutionConfig keyword-argument dict (ints rounded, values clipped)."""
         values = np.clip(x, self.bounds[:, 0], self.bounds[:, 1])
         return {
             spec.name: (
@@ -69,7 +69,7 @@ class MetaSearchSpace:
 
 @dataclass
 class MetaEvaluationConfig:
-    """内层进化实验配置（每次候选超参评估的运行预算）。"""
+    """Inner evolution experiment config (run budget per candidate hyperparameter evaluation)."""
 
     problem: OptimizationProblem
     fitness_weights: np.ndarray | None = None
@@ -80,9 +80,9 @@ class MetaEvaluationConfig:
 
 
 class MetaProblem(OptimizationProblem):
-    """把"超参配置 -> 内层进化表现"包装成 BO 可优化的黑盒问题。
+    """Wrap "hyperparameter config -> inner evolution performance" as a black-box problem optimizable by BO.
 
-    每次 scalarize 调用即运行一次内层进化实验（确定性：内层种子固定）。
+    Each scalarize call runs one inner evolution experiment (deterministic: the inner seed is fixed).
     """
 
     name = "meta_hyperparams"
@@ -92,11 +92,11 @@ class MetaProblem(OptimizationProblem):
         space: MetaSearchSpace,
         eval_config: MetaEvaluationConfig,
     ):
-        """初始化。
+        """Initialize.
 
         Args:
-            space: 超参搜索空间
-            eval_config: 内层评估配置
+            space: hyperparameter search space
+            eval_config: inner evaluation config
         """
         self.space = space
         self.eval_config = eval_config
@@ -107,7 +107,7 @@ class MetaProblem(OptimizationProblem):
         self.calls = 0
 
     def scalarize(self, x: np.ndarray, weights: np.ndarray | None = None) -> float:
-        """一次候选超参的评估：跑内层进化实验返回无噪声适应度。"""
+        """Evaluate one candidate hyperparameter config: run an inner evolution experiment and return noise-free fitness."""
         config = self.space.to_config(x)
         inner = EvolutionConfig(
             population_size=config["population_size"],
@@ -139,12 +139,12 @@ class MetaProblem(OptimizationProblem):
         return float(clean)
 
     def evaluate_clean(self, x: np.ndarray) -> np.ndarray:
-        """占位实现（内层评估走 scalarize）。"""
+        """Placeholder implementation (inner evaluation goes through scalarize)."""
         return np.array([self.scalarize(x)])
 
 
 class HyperparameterSearch:
-    """Meta 层超参搜索：贝叶斯优化外层 + 内层进化评估。"""
+    """Meta-layer hyperparameter search: Bayesian optimization outer loop + inner evolution evaluation."""
 
     def __init__(
         self,
@@ -155,15 +155,15 @@ class HyperparameterSearch:
         seed: int = 42,
         weights: np.ndarray | None = None,
     ):
-        """初始化。
+        """Initialize.
 
         Args:
-            space: 超参搜索空间
-            eval_config: 内层评估配置
-            n_init: 初始随机探索点数
-            n_iterations: BO 迭代数
-            seed: 外层随机种子
-            weights: 内层问题标量化权重
+            space: hyperparameter search space
+            eval_config: inner evaluation config
+            n_init: number of initial random exploration points
+            n_iterations: number of BO iterations
+            seed: outer random seed
+            weights: scalarization weights of the inner problem
         """
         self.space = space
         self.eval_config = eval_config
@@ -176,10 +176,10 @@ class HyperparameterSearch:
         self.trajectory: list[tuple[np.ndarray, float]] = []
 
     def search(self) -> dict:
-        """执行超参搜索。
+        """Run the hyperparameter search.
 
         Returns:
-            最优超参配置（EvolutionConfig 关键字字典）
+            best hyperparameter config (EvolutionConfig keyword dict)
         """
         low = self.problem.bounds[:, 0]
         high = self.problem.bounds[:, 1]
@@ -216,5 +216,5 @@ class HyperparameterSearch:
         return self.space.to_config(best_x)
 
     def best_fitness(self) -> float:
-        """当前最优评估值。"""
+        """Current best evaluated value."""
         return max(f for _, f in self.trajectory) if self.trajectory else 0.0

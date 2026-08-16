@@ -1,4 +1,4 @@
-"""策略生成器：将 LLM 输出 JSON 解析校验为可执行 StrategyGenome。"""
+"""Strategy generator: parses and validates the LLM output JSON into an executable StrategyGenome."""
 
 import logging
 
@@ -9,7 +9,7 @@ from evoagent.tools.base import TOOL_NAMES
 
 logger = logging.getLogger("evoagent.agent")
 
-# 工具参数合法范围
+# Valid ranges for tool parameters
 _TOOL_PARAM_RANGES: dict[str, tuple[float, float]] = {
     "cma_sigma": (0.05, 0.5),
     "ga_mutation": (0.02, 0.4),
@@ -36,13 +36,13 @@ _DEFAULT_PARAMS: dict[str, float] = {
 
 
 def parse_strategy_json(data: dict) -> StrategyGenome | None:
-    """解析 LLM 输出为策略基因，非法时返回 None。
+    """Parse the LLM output into a strategy genome; return None if invalid.
 
     Args:
-        data: LLM 返回的 JSON 字典
+        data: JSON dictionary returned by the LLM
 
     Returns:
-        合法的 StrategyGenome，非法返回 None
+        A valid StrategyGenome, or None if invalid
     """
     try:
         initial = str(data.get("initial_tool", "cma_es"))
@@ -74,14 +74,14 @@ def parse_strategy_with_fallback(
     data: dict,
     rng: np.random.Generator,
 ) -> StrategyGenome:
-    """解析 LLM 输出；非法时回退为随机策略。
+    """Parse the LLM output; fall back to a random strategy if invalid.
 
     Args:
-        data: LLM 返回的 JSON 字典
-        rng: 随机数生成器（回退用）
+        data: JSON dictionary returned by the LLM
+        rng: Random number generator (for the fallback)
 
     Returns:
-        策略基因（LLM 输出或随机回退）
+        Strategy genome (from LLM output or random fallback)
     """
     genome = parse_strategy_json(data)
     if genome is None:

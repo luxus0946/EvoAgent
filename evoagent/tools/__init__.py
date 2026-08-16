@@ -1,1 +1,1 @@
-"""优化工具池：可插拔的优化算法集合。"""
+"""Optimization tool pool: a pluggable collection of optimization algorithms."""

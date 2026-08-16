@@ -1,1 +1,1 @@
-"""工具函数子包。"""
+"""Utility function subpackage."""

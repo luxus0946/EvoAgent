@@ -1,4 +1,4 @@
-"""日志配置：统一格式，控制台 + 文件双输出。"""
+"""Logging configuration: unified format with both console and file output."""
 
 import logging
 import sys
@@ -11,15 +11,15 @@ def setup_logger(
     level: str = "INFO",
     log_file: str | None = None,
 ) -> logging.Logger:
-    """初始化全局 logger。
+    """Initialize the global logger.
 
     Args:
-        name: logger 名称
-        level: 日志级别
-        log_file: 日志文件路径，None 时仅控制台输出
+        name: Logger name
+        level: Log level
+        log_file: Log file path; console-only output when None
 
     Returns:
-        配置完成的 logger 实例
+        Configured logger instance
     """
     logger = logging.getLogger(name)
     if logger.handlers:
@@ -47,7 +47,7 @@ def setup_logger(
 
 
 def new_log_file_path(output_dir: str | Path) -> str:
-    """生成带时间戳的日志文件名。"""
+    """Generate a log filename with a timestamp."""
     return str(
         Path(output_dir) / f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
     )

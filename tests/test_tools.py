@@ -1,4 +1,4 @@
-"""优化工具测试：能收敛、返回值格式正确。"""
+"""Optimization tool tests: convergence and correct return value format."""
 
 import numpy as np
 import pytest
@@ -27,13 +27,13 @@ class TestSingleObjectiveTools:
         assert result.best_fitness > -1e100
 
     def test_converges_on_rosenbrock(self, tool_name):
-        """在 2 维 Rosenbrock 上应明显优于随机搜索。"""
+        """Should clearly outperform random search on the 2-D Rosenbrock."""
         problem = RosenbrockProblem()
         problem.dim = 2
         problem.bounds = np.tile([-5.0, 10.0], (2, 1))
         tool = build_tool(tool_name)
         result = tool.optimize(problem, BUDGET, rng=make_rng(0))
-        assert result.best_fitness > -30.0  # 接近最优 0 而非远处随机值
+        assert result.best_fitness > -30.0  # near the optimum 0, not a distant random value
 
     def test_improves_from_init(self, tool_name):
         problem = SemiconductorSimulator()

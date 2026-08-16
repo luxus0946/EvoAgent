@@ -1,4 +1,4 @@
-"""贝叶斯优化工具：高斯过程代理模型 + EI 采集函数（numpy 自研）。"""
+"""Bayesian optimization tool: Gaussian process surrogate model + EI acquisition function (self-implemented in numpy)."""
 
 import math
 
@@ -9,7 +9,7 @@ from evoagent.tools.base import EarlyStopMonitor, OptimizationTool, ToolResult
 
 
 class _GaussianProcess:
-    """各向同性 RBF 核高斯过程回归（用于代理模型）。"""
+    """Isotropic RBF-kernel Gaussian process regression (used as the surrogate model)."""
 
     def __init__(self, lengthscale: float = 0.5, sigma_f: float = 1.0, noise: float = 1e-4):
         self.lengthscale = lengthscale
@@ -21,7 +21,7 @@ class _GaussianProcess:
         self.l = np.empty(0)
 
     def fit(self, x: np.ndarray, y: np.ndarray) -> None:
-        """拟合 GP（标准化目标值，Cholesky 分解）。"""
+        """Fit the GP (standardized targets, Cholesky decomposition)."""
         self.x_train = x
         self.y_train = y
         self.y_mean = float(np.mean(y))
@@ -38,7 +38,7 @@ class _GaussianProcess:
             self.alpha = np.linalg.solve(self.l.T, np.linalg.solve(self.l, y_norm))
 
     def predict(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """预测均值和标准差（原始尺度）。"""
+        """Predict mean and standard deviation (original scale)."""
         k_s = self._kernel(x, self.x_train)
         mean = k_s @ self.alpha * self.y_std + self.y_mean
         v = np.linalg.solve(self.l, k_s.T)
@@ -49,7 +49,7 @@ class _GaussianProcess:
     def log_marginal_likelihood(
         self, lengthscale: float, sigma_f: float, noise: float
     ) -> float:
-        """给定超参的边际对数似然（用于超参优化）。"""
+        """Log marginal likelihood for the given hyperparameters (used for hyperparameter optimization)."""
         k = self._kernel(self.x_train, lengthscale=lengthscale, sigma_f=sigma_f)
         k += np.eye(len(k)) * (noise + 1e-8)
         try:
@@ -80,11 +80,11 @@ class _GaussianProcess:
 
 
 class BayesianOptTool(OptimizationTool):
-    """贝叶斯优化：GP 回归 + EI 采集，小样本高效优化。
+    """Bayesian optimization: GP regression + EI acquisition, highly efficient for small samples.
 
-    超参（可通过策略基因进化）：
-    - bo_xi: EI 探索系数
-    - bo_max_train: GP 训练集上限（超出时保留最近点 + 均匀子采样）
+    Hyperparameters (evolvable via the strategy genome):
+    - bo_xi: EI exploration coefficient
+    - bo_max_train: GP training set cap (beyond it, keep the most recent points plus a uniform subsample)
     """
 
     name = "bo"
@@ -157,7 +157,7 @@ class BayesianOptTool(OptimizationTool):
     def _training_subset(
         self, x: np.ndarray, y: np.ndarray, rng: np.random.Generator
     ) -> tuple[np.ndarray, np.ndarray]:
-        """控制 GP 训练集规模：超出上限时保留最近一半 + 均匀采样一半。"""
+        """Cap the GP training set size: keep the most recent half plus a uniformly sampled half when over the limit."""
         if len(x) <= self.max_train:
             return x, y
         recent = self.max_train // 2
@@ -170,7 +170,7 @@ class BayesianOptTool(OptimizationTool):
     def _fit_gp(
         self, x: np.ndarray, y: np.ndarray, rng: np.random.Generator
     ) -> _GaussianProcess:
-        """随机搜索 GP 超参（长度尺度/信号方差/噪声）。"""
+        """Randomly search GP hyperparameters (lengthscale / signal variance / noise)."""
         gp = _GaussianProcess()
         gp.x_train = x
         gp._y_norm = (y - np.mean(y)) / (np.std(y) or 1.0)
@@ -194,7 +194,7 @@ class BayesianOptTool(OptimizationTool):
         high: np.ndarray,
         rng: np.random.Generator,
     ) -> np.ndarray:
-        """随机候选 + 局部精修最大化 EI 采集函数。"""
+        """Maximize the EI acquisition function via random candidates plus local refinement."""
         candidates = rng.uniform(low, high, size=(self.n_candidates, problem.dim))
         best = float(np.max(gp.y_train))
         mean, std = gp.predict(candidates)

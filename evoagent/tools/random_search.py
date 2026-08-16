@@ -1,4 +1,4 @@
-"""随机搜索基线工具。"""
+"""Random search baseline tool."""
 
 import numpy as np
 
@@ -7,7 +7,7 @@ from evoagent.tools.base import EarlyStopMonitor, OptimizationTool, ToolResult
 
 
 class RandomSearchTool(OptimizationTool):
-    """随机搜索：全局探索基线，均匀采样参数空间。"""
+    """Random search: global exploration baseline that samples the parameter space uniformly."""
 
     name = "random_search"
 

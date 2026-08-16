@@ -1,4 +1,4 @@
-"""检查点与断点续跑测试。"""
+"""Checkpoint and resume-from-checkpoint tests."""
 
 import numpy as np
 import pytest
@@ -71,7 +71,7 @@ class TestCheckpointRoundtrip:
 
 class TestResume:
     def test_resume_equals_uninterrupted(self, tmp_path):
-        """断点续跑应与一次性完整运行结果完全一致（RNG 状态已恢复）。"""
+        """Resume-from-checkpoint produces identical results to a single full run (RNG state restored)."""
         problem = SemiconductorSimulator()
         full_config = _config(gens=4)
         full = run_evolution(problem, full_config)

@@ -1,11 +1,11 @@
-"""检查点与断点续跑（借鉴 OpenEvolve controller.py 的全状态 checkpoint）。
+"""Checkpointing and resume (inspired by the full-state checkpoint of OpenEvolve controller.py).
 
-保存内容：
-- 各岛种群个体（基因/适应度/最优参数/目标向量）+ 各岛 RNG 状态
-- 代数计数、总评估数、Pareto 档案、每代历史
-- 实验配置（用于续跑时校验一致性）
+Saved contents:
+- per-island population individuals (genome/fitness/best params/objective vectors) + per-island RNG state
+- generation counter, total evaluations, Pareto archive, per-generation history
+- experiment config (to validate consistency when resuming)
 
-恢复后 RNG 状态一致，续跑结果与从头连续运行完全一致（可验证）。
+After restoration the RNG state is identical, so a resumed run matches a continuous run exactly (verifiable).
 """
 
 import json
@@ -26,7 +26,7 @@ FORMAT_VERSION = 1
 
 @dataclass
 class EvolutionCheckpoint:
-    """进化实验检查点。"""
+    """Evolution experiment checkpoint."""
 
     config: dict
     generation: int
@@ -40,12 +40,12 @@ class EvolutionCheckpoint:
 
 
 def save_checkpoint(path: str | Path, model: IslandModel, state: dict) -> None:
-    """保存检查点到 JSON 文件。
+    """Save a checkpoint to a JSON file.
 
     Args:
-        path: 检查点文件路径
-        model: 岛屿模型（用于序列化各岛种群与 RNG 状态）
-        state: 实验状态（config/archive/history/hv_history/total_evals 等）
+        path: checkpoint file path
+        model: island model (used to serialize each island's population and RNG state)
+        state: experiment state (config/archive/history/hv_history/total_evals, etc.)
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -72,17 +72,17 @@ def save_checkpoint(path: str | Path, model: IslandModel, state: dict) -> None:
 
 
 def load_checkpoint(path: str | Path) -> EvolutionCheckpoint:
-    """加载检查点。
+    """Load a checkpoint.
 
     Args:
-        path: 检查点文件路径
+        path: checkpoint file path
 
     Returns:
         EvolutionCheckpoint
 
     Raises:
-        FileNotFoundError: 文件不存在
-        ValueError: 版本不兼容
+        FileNotFoundError: if the file does not exist
+        ValueError: if the version is incompatible
     """
     path = Path(path)
     if not path.exists():
@@ -100,18 +100,18 @@ def restore_model(
     problem,
     multi_objective: bool,
 ) -> tuple[IslandModel, dict]:
-    """从检查点恢复岛屿模型与实验状态。
+    """Restore the island model and experiment state from a checkpoint.
 
     Args:
-        checkpoint: 检查点
-        problem: 优化问题
-        multi_objective: 多目标模式（校验用）
+        checkpoint: checkpoint
+        problem: optimization problem
+        multi_objective: multi-objective mode (for validation)
 
     Returns:
-        (model, state)：恢复的模型与状态字典
+        (model, state): restored model and state dict
 
     Raises:
-        ValueError: 配置不一致
+        ValueError: if the config is inconsistent
     """
     cfg = checkpoint.config
     if cfg.get("multi_objective") != multi_objective:

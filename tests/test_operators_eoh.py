@@ -1,4 +1,4 @@
-"""EoH 算子式变异测试。"""
+"""EoH operator-based mutation tests."""
 
 import numpy as np
 import pytest

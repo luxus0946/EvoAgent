@@ -1,4 +1,4 @@
-"""进化循环主逻辑：评估 -> 选择 -> 交叉 -> 变异 -> 迁移 -> 精英保留。"""
+"""Main evolution loop: evaluate -> select -> crossover -> mutate -> migrate -> retain elites."""
 
 import logging
 import time
@@ -21,7 +21,7 @@ logger = logging.getLogger("evoagent.evolution")
 
 @dataclass
 class GenerationRecord:
-    """每代记录。"""
+    """Per-generation record."""
 
     generation: int
     best_fitness: float
@@ -34,7 +34,7 @@ class GenerationRecord:
 
 @dataclass
 class EvolutionResult:
-    """进化实验结果。"""
+    """Evolution experiment result."""
 
     best_individual: object
     best_fitness: float
@@ -55,16 +55,16 @@ def run_evolution(
     checkpoint_path: str | None = None,
     resume: bool = False,
 ) -> EvolutionResult:
-    """运行一次完整的进化实验。
+    """Run a complete evolution experiment.
 
     Args:
-        problem: 优化问题
-        config: 进化配置
-        checkpoint_path: 检查点文件路径（非 None 时每代保存）
-        resume: 是否从检查点断点续跑（需 checkpoint_path 存在）
+        problem: optimization problem
+        config: evolution config
+        checkpoint_path: checkpoint file path (saved each generation when not None)
+        resume: whether to resume from a checkpoint (requires checkpoint_path to exist)
 
     Returns:
-        EvolutionResult：最优个体、历史记录、Pareto 档案等
+        EvolutionResult: best individual, history, Pareto archive, etc.
     """
     start = time.perf_counter()
     model = _build_model(problem, config)
@@ -177,7 +177,7 @@ def run_evolution(
 
 
 def _build_model(problem: OptimizationProblem, config: EvolutionConfig) -> IslandModel:
-    """按配置构建岛屿模型。"""
+    """Build the island model according to the config."""
     if config.n_islands > 1:
         names = ["explore", "balance", "exploit"][: config.n_islands]
     else:
@@ -205,7 +205,7 @@ def _save_checkpoint(
     hv_history: list[float],
     history: list[GenerationRecord],
 ) -> None:
-    """序列化并保存检查点。"""
+    """Serialize and save the checkpoint."""
     from evoagent.evolution.checkpoint import save_checkpoint
 
     history_dicts = [
@@ -237,12 +237,12 @@ def _save_checkpoint(
 
 
 def _all_individuals(model: IslandModel) -> list:
-    """收集所有岛的个体。"""
+    """Collect individuals from all islands."""
     return [ind for island in model.islands for ind in island.individuals]
 
 
 def _update_archive(archive: list[np.ndarray], objectives: list) -> list[np.ndarray]:
-    """将新目标向量并入全局非支配档案。"""
+    """Merge new objective vectors into the global non-dominated archive."""
     merged = list(archive)
     merged.extend([np.asarray(o, dtype=float) for o in objectives])
     arr = np.array(merged)
@@ -251,7 +251,7 @@ def _update_archive(archive: list[np.ndarray], objectives: list) -> list[np.ndar
 
 
 def _final_front(archive: list[np.ndarray]) -> np.ndarray:
-    """最终 Pareto 前沿（无噪声目标）。"""
+    """Final Pareto front (noise-free objectives)."""
     if not archive:
         return np.empty((0, 0))
     arr = np.array(archive)
@@ -259,7 +259,7 @@ def _final_front(archive: list[np.ndarray]) -> np.ndarray:
 
 
 def _config_to_dict(config: EvolutionConfig) -> dict:
-    """将配置转为可序列化字典。"""
+    """Convert the config to a serializable dict."""
     return {
         "population_size": config.population_size,
         "max_generations": config.max_generations,

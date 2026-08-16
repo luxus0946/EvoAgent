@@ -1,10 +1,12 @@
-"""Meta 层超参搜索实验：贝叶斯优化自动配置 EvoAgent 自身超参。
+"""Meta-layer hyperparameter search experiment: Bayesian optimization auto-configures EvoAgent.
 
-流程：
-1. 默认超参配置（EvolutionConfig 默认值）作为基线，跑 n_seeds 次短进化实验取均值
-2. Meta 搜索：外层 BO 迭代 n_outer 次，每次内层跑一次短进化实验评估候选超参
-3. 搜索到的最优超参再跑 n_seeds 次取均值，与默认配置对比
-4. 输出报告（最优配置表、超参轨迹、对比结论）与收敛曲线
+Workflow:
+1. Default hyperparameter configuration (EvolutionConfig defaults) serves as baseline,
+   run n_seeds short evolution experiments and average
+2. Meta search: outer BO iterates n_outer times, each iteration runs one short inner
+   evolution experiment to evaluate a candidate configuration
+3. Best found hyperparameters are re-run for n_seeds and averaged, compared against default
+4. Output report (best config table, hyperparameter trajectory, conclusion) and convergence curve
 """
 
 import argparse
@@ -46,7 +48,7 @@ def resolve_problem(name: str):
 def evaluate_config(
     problem, config: EvolutionConfig, weights: np.ndarray | None, n_seeds: int
 ) -> list[float]:
-    """同一配置跑 n_seeds 次（种子 1..n），返回无噪声适应度列表。"""
+    """Run n_seeds times (seeds 1..n) with the same config, return noise-free fitness list."""
     finals = []
     for seed in range(1, n_seeds + 1):
         config.random_seed = seed
@@ -56,21 +58,21 @@ def evaluate_config(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="EvoAgent Meta 层超参搜索实验")
+    parser = argparse.ArgumentParser(description="EvoAgent meta-layer hyperparameter search experiment")
     parser.add_argument("--problem", default="semiconductor")
     parser.add_argument("--outer-iters", type=int, default=12,
-                        help="外层 BO 迭代数（每次迭代 = 一次内层进化实验）")
+                        help="number of outer BO iterations (each iteration = one inner evolution run)")
     parser.add_argument("--n-init", type=int, default=4,
-                        help="外层初始随机探索点数")
+                        help="number of initial random exploration points in the outer loop")
     parser.add_argument("--inner-gens", type=int, default=4,
-                        help="内层进化实验代数（候选超参评估预算）")
+                        help="generations of the inner evolution run (candidate evaluation budget)")
     parser.add_argument("--inner-seed", type=int, default=7,
-                        help="内层固定种子（保证同一超参评估确定性）")
+                        help="fixed inner seed (deterministic evaluation of the same configuration)")
     parser.add_argument("--eval-gens", type=int, default=6,
-                        help="最终对比评估的进化代数")
+                        help="generations for the final comparison evaluation")
     parser.add_argument("--seeds", type=int, default=3,
-                        help="最终对比评估的种子数")
-    parser.add_argument("--seed", type=int, default=42, help="外层搜索种子")
+                        help="number of seeds for the final comparison evaluation")
+    parser.add_argument("--seed", type=int, default=42, help="outer search seed")
     parser.add_argument("--output", default="./data/results")
     args = parser.parse_args()
 
@@ -87,7 +89,7 @@ def main() -> None:
         problem.name, args.outer_iters, args.n_init, args.inner_gens,
     )
 
-    # 1) 默认配置基线
+    # 1) Default configuration baseline
     default_config = EvolutionConfig(
         n_islands=3,
         n_objectives=problem.n_objectives,
@@ -98,7 +100,7 @@ def main() -> None:
     )
     logger.info("默认配置: mean=%.6f %s", np.mean(default_scores), default_scores)
 
-    # 2) Meta 搜索
+    # 2) Meta search
     eval_config = MetaEvaluationConfig(
         problem=problem,
         fitness_weights=weights,
@@ -117,7 +119,7 @@ def main() -> None:
     best_hyper = search.search()
     logger.info("Meta 搜索最优超参: %s", best_hyper)
 
-    # 3) 最优超参最终评估（更长代数、多种子）
+    # 3) Final evaluation of best hyperparameters (longer runs, multiple seeds)
     best_config = EvolutionConfig(
         n_islands=3,
         max_generations=args.eval_gens,
@@ -134,7 +136,7 @@ def main() -> None:
     ) * 100
     logger.info("相对默认配置提升: %.1f%%", improve)
 
-    # 4) 收敛曲线：默认配置 vs 最优超参（各代 best 均值）
+    # 4) Convergence curves: default config vs best hyperparameters (per-generation best mean)
     def curve_for(config: EvolutionConfig, n_seeds: int) -> np.ndarray:
         curves = []
         for seed in range(1, n_seeds + 1):
@@ -160,7 +162,7 @@ def main() -> None:
         xlabel="代数", ylabel="最优适应度",
     )
 
-    # 5) 报告与结构化输出
+    # 5) Report and structured output
     report = {
         "problem": problem.name,
         "meta_search": {
@@ -207,7 +209,7 @@ def main() -> None:
 
 
 def _write_report(report: dict, output_dir: Path) -> None:
-    """生成 Meta 搜索 Markdown 报告。"""
+    """Generate the Meta search Markdown report."""
     d = report["default_config"]
     b = report["best_config"]
     lines = [

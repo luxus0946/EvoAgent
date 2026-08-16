@@ -1,1 +1,1 @@
-"""进化层：进化算子、种群管理、策略执行器、岛屿模型与进化循环。"""
+"""Evolution layer: evolutionary operators, population management, strategy executor, island model, and evolution loop."""

@@ -1,3 +1,3 @@
-"""EvoAgent 核心包：面向半导体工艺优化的自主进化多智能体系统（算法验证版）。"""
+"""EvoAgent core package: an autonomous evolutionary multi-agent system for semiconductor process optimization (algorithm validation edition)."""
 
 __version__ = "0.1.0"

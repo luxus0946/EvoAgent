@@ -1,4 +1,4 @@
-"""全局配置管理：所有可配置参数集中于此，支持环境变量覆盖。"""
+"""Global configuration management: all tunable parameters are centralized here, with environment variable overrides."""
 
 import os
 from dataclasses import dataclass, field
@@ -11,7 +11,7 @@ load_dotenv()
 
 @dataclass
 class EvolutionConfig:
-    """进化框架配置（单岛参数，岛屿数大于 1 时启用岛屿模型）。"""
+    """Evolution framework configuration (single-island parameters; the island model is enabled when the number of islands exceeds 1)."""
 
     population_size: int = 8
     max_generations: int = 10
@@ -31,7 +31,7 @@ class EvolutionConfig:
 
 @dataclass
 class ExperimentConfig:
-    """对比实验配置。"""
+    """Comparison experiment configuration."""
 
     total_budget: int = 800
     baseline_tools: list[str] = field(
@@ -46,7 +46,7 @@ class ExperimentConfig:
 
 @dataclass
 class LLMConfig:
-    """大模型配置（阶段二：LLM Agent）。"""
+    """LLM configuration (Phase 2: LLM Agent)."""
 
     model_name: str = "deepseek-chat"
     api_key: str = field(default_factory=lambda: os.getenv("DEEPSEEK_API_KEY", ""))
@@ -61,13 +61,13 @@ class LLMConfig:
 
     @property
     def enabled(self) -> bool:
-        """是否配置了真实 API Key。"""
+        """Whether a real API key is configured."""
         return bool(self.api_key and not self.api_key.startswith("sk-your-key"))
 
 
 @dataclass
 class AppConfig:
-    """全局配置聚合。"""
+    """Global configuration aggregate."""
 
     evolution: EvolutionConfig = field(default_factory=EvolutionConfig)
     experiment: ExperimentConfig = field(default_factory=ExperimentConfig)
@@ -76,7 +76,7 @@ class AppConfig:
 
 
 def from_env() -> AppConfig:
-    """从环境变量加载配置（仅覆盖非默认值场景）。"""
+    """Load configuration from environment variables (only overrides non-default values)."""
     config = AppConfig()
     config.log_level = os.getenv("EVOAGENT_LOG_LEVEL", config.log_level)
     config.evolution.random_seed = int(

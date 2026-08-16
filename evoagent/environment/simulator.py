@@ -1,26 +1,26 @@
-"""半导体工艺代理仿真环境。
+"""Semiconductor process surrogate simulation environment.
 
-模拟光刻/刻蚀工艺参数到多目标指标的映射：
-- 输入：8 维归一化工艺参数 x ∈ [0,1]^8
-- 输出：(yield 良率, cost 成本, cycle_time 周期)，均归一化到 [0,1]
+Simulates the mapping from lithography/etching process parameters to multi-objective metrics:
+- input: 8-dimensional normalized process parameters x in [0,1]^8
+- output: (yield, cost, cycle_time), all normalized to [0,1]
 
-设计特性：
-- 多峰：两个高良率峰值区域（对应不同工艺窗口）
-- 参数耦合：峰间存在 sin 耦合项
-- 冲突目标：良率峰值区与低成本/短周期区域部分冲突，构成 Pareto 折中
-- 噪声：每次评估叠加高斯噪声，模拟真实测量误差
+Design characteristics:
+- multimodal: two high-yield peak regions (corresponding to different process windows)
+- parameter coupling: a sin coupling term between the peaks
+- conflicting objectives: high-yield regions partially conflict with low-cost/short-cycle regions, forming a Pareto trade-off
+- noise: Gaussian noise is added to every evaluation to simulate real measurement error
 
-工艺参数物理含义映射表（归一化 -> 物理范围）：
-| 索引 | 参数 | 物理范围 |
+Physical meaning mapping of process parameters (normalized -> physical range):
+| index | parameter | physical range |
 |------|------|---------|
-| 0 | 曝光剂量 | 50 ~ 300 mJ/cm^2 |
-| 1 | 焦距 | -50 ~ 50 um |
-| 2 | 温度 | 200 ~ 400 C |
-| 3 | 气压 | 0.1 ~ 5 Torr |
-| 4 | 功率 | 100 ~ 1000 W |
-| 5 | 处理时间 | 10 ~ 120 s |
-| 6 | 气体流量 | 10 ~ 100 sccm |
-| 7 | 蚀刻时间 | 5 ~ 60 s |
+| 0 | exposure dose | 50 ~ 300 mJ/cm^2 |
+| 1 | focal distance | -50 ~ 50 um |
+| 2 | temperature | 200 ~ 400 C |
+| 3 | pressure | 0.1 ~ 5 Torr |
+| 4 | power | 100 ~ 1000 W |
+| 5 | processing time | 10 ~ 120 s |
+| 6 | gas flow rate | 10 ~ 100 sccm |
+| 7 | etching time | 5 ~ 60 s |
 """
 
 import numpy as np
@@ -49,25 +49,25 @@ _PARAM_RANGES_PHYSICAL = [
     (5.0, 60.0),
 ]
 
-# 两个高良率工艺窗口中心
+# Centers of the two high-yield process windows
 _YIELD_PEAK_A = np.array([0.30, 0.70, 0.50, 0.40, 0.60, 0.20, 0.80, 0.50])
 _YIELD_PEAK_B = np.array([0.80, 0.20, 0.40, 0.60, 0.30, 0.70, 0.20, 0.60])
 _PEAK_WIDTH = 0.40
 
-# 成本相关维度：剂量、功率、流量（能耗/物料）
+# Cost-related dimensions: dose, power, flow (energy/material consumption)
 _COST_DIMS = np.array([0, 4, 6])
-# 周期相关维度：处理时间、蚀刻时间
+# Cycle-time-related dimensions: processing time, etching time
 _CYCLE_DIMS = np.array([5, 7])
 
 
 def to_physical(x: np.ndarray) -> dict[str, float]:
-    """将归一化参数转换为物理量纲（用于报告展示）。
+    """Convert normalized parameters to physical units (for reporting display).
 
     Args:
-        x: 归一化参数向量，shape (8,)
+        x: normalized parameter vector, shape (8,)
 
     Returns:
-        参数名 -> 物理值 的映射
+        mapping of parameter name -> physical value
     """
     return {
         name: float(np.clip(x[i], 0, 1) * (hi - lo) + lo)
@@ -76,7 +76,7 @@ def to_physical(x: np.ndarray) -> dict[str, float]:
 
 
 class SemiconductorSimulator(OptimizationProblem):
-    """半导体工艺代理仿真问题（3 目标：良率/成本/周期）。"""
+    """Semiconductor process surrogate simulation problem (3 objectives: yield/cost/cycle time)."""
 
     name = "semiconductor"
     dim = 8
@@ -102,7 +102,7 @@ class SemiconductorSimulator(OptimizationProblem):
         return np.array([yield_rate, cost, cycle])
 
     def evaluate(self, x: np.ndarray) -> np.ndarray:
-        """含噪声评估：yield 噪声 0.02，cost/cycle 噪声 0.01。"""
+        """Noisy evaluation: yield noise 0.02, cost/cycle noise 0.01."""
         clean = self.evaluate_clean(x)
         rng = np.random.default_rng(int(np.sum(np.asarray(x) * 1e6)) % (2**32))
         noise = rng.normal(0.0, [self.noise_std, 0.01, 0.01], size=3)
@@ -110,9 +110,9 @@ class SemiconductorSimulator(OptimizationProblem):
 
 
 class Semiconductor2Objective(OptimizationProblem):
-    """半导体代理仿真双目标变体：良率(最大化) vs 成本(最小化)。
+    """Two-objective variant of the semiconductor surrogate: yield (maximize) vs cost (minimize).
 
-    用于多目标 Pareto 验证（周期目标折叠进成本以构成二维折中）。
+    Used for multi-objective Pareto validation (cycle time is folded into cost to form a 2D trade-off).
     """
 
     name = "semiconductor_2obj"

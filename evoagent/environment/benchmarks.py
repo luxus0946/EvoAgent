@@ -1,7 +1,7 @@
-"""标准基准测试函数：验证算法泛化能力的经典测试集。
+"""Standard benchmark functions: a classic test set for verifying algorithm generalization.
 
-包含：Rosenbrock（凸、沟谷）、Ackley（多峰、大量局部最优）、Rastrigin（强多峰）、
-ZDT1（两目标 Pareto 测试问题）。全部为最小化问题。
+Includes: Rosenbrock (convex, valley-shaped), Ackley (multimodal, many local optima), Rastrigin (strongly multimodal),
+ZDT1 (two-objective Pareto test problem). All are minimization problems.
 """
 
 import numpy as np
@@ -10,7 +10,7 @@ from evoagent.environment.problem import OptimizationProblem
 
 
 class _SingleObjectiveProblem(OptimizationProblem):
-    """单目标最小化基准问题的公共基类。"""
+    """Common base class for single-objective minimization benchmarks."""
 
     objective_names = ["f"]
     minimize = np.array([True])
@@ -24,7 +24,7 @@ class _SingleObjectiveProblem(OptimizationProblem):
 
 
 class RosenbrockProblem(_SingleObjectiveProblem):
-    """Rosenbrock 函数：经典凸测试（最优 x_i=1, f=0）。"""
+    """Rosenbrock function: classic convex test (optimum x_i=1, f=0)."""
 
     name = "rosenbrock"
     dim = 10
@@ -37,7 +37,7 @@ class RosenbrockProblem(_SingleObjectiveProblem):
 
 
 class AckleyProblem(_SingleObjectiveProblem):
-    """Ackley 函数：多峰、大量局部最优（最优 x=0, f=0）。"""
+    """Ackley function: multimodal with many local optima (optimum x=0, f=0)."""
 
     name = "ackley"
     dim = 10
@@ -51,7 +51,7 @@ class AckleyProblem(_SingleObjectiveProblem):
 
 
 class RastriginProblem(_SingleObjectiveProblem):
-    """Rastrigin 函数：强多峰（最优 x=0, f=0）。"""
+    """Rastrigin function: strongly multimodal (optimum x=0, f=0)."""
 
     name = "rastrigin"
     dim = 10
@@ -63,7 +63,7 @@ class RastriginProblem(_SingleObjectiveProblem):
 
 
 class ZDT1Problem(OptimizationProblem):
-    """ZDT1 两目标测试问题（最优 Pareto 前沿 f2 = 1 - sqrt(f1)）。"""
+    """ZDT1 two-objective test problem (optimal Pareto front f2 = 1 - sqrt(f1))."""
 
     name = "zdt1"
     dim = 10

@@ -1,4 +1,4 @@
-"""阶段二测试：提示词基因、LLM 客户端、策略生成、知识库、Agent 工作流、LLM 种群。"""
+"""Phase 2 tests: prompt genome, LLM client, strategy generation, knowledge base, agent workflow, LLM population."""
 
 import numpy as np
 import pytest
@@ -117,7 +117,7 @@ class TestStrategyGenerator:
         g = parse_strategy_json(data)
         assert g is not None
         assert g.initial_tool == "ga"
-        assert g.tool_params["cma_sigma"] == pytest.approx(0.5)  # 超界被钳制
+        assert g.tool_params["cma_sigma"] == pytest.approx(0.5)  # out-of-range values are clamped
 
     def test_invalid_tool_returns_none(self):
         assert parse_strategy_json({"initial_tool": "magic"}) is None

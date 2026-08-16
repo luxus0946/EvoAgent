@@ -1,16 +1,16 @@
-"""适应度评估：加权标量法 + NSGA-II 风格 Pareto 非支配排序 + 超体积指标。"""
+"""Fitness evaluation: weighted scalarization + NSGA-II-style Pareto non-dominated sorting + hypervolume metric."""
 
 import numpy as np
 
 
 def normalize_weights(weights: np.ndarray) -> np.ndarray:
-    """将权重归一化为和为 1。
+    """Normalize weights so they sum to 1.
 
     Args:
-        weights: 权重向量
+        weights: weight vector
 
     Returns:
-        归一化权重
+        normalized weights
     """
     w = np.asarray(weights, dtype=float)
     total = float(np.sum(np.abs(w)))
@@ -18,26 +18,26 @@ def normalize_weights(weights: np.ndarray) -> np.ndarray:
 
 
 def weighted_fitness(objectives: np.ndarray, weights: np.ndarray) -> float:
-    """加权标量适应度（最大化约定，越大越好）。
+    """Weighted scalar fitness (maximization convention; higher is better).
 
     Args:
-        objectives: 目标向量（最大化约定）
-        weights: 权重向量
+        objectives: objective vector (maximization convention)
+        weights: weight vector
 
     Returns:
-        标量适应度
+        scalar fitness
     """
     return float(np.sum(normalize_weights(weights) * objectives))
 
 
 def non_dominated_front(objectives: np.ndarray) -> np.ndarray:
-    """计算非支配前沿（最大化约定）。
+    """Compute the non-dominated front (maximization convention).
 
     Args:
-        objectives: 目标矩阵，shape (n, m)，最大化约定
+        objectives: objective matrix, shape (n, m), maximization convention
 
     Returns:
-        非支配点的索引数组
+        indices of the non-dominated points
     """
     n = len(objectives)
     if n == 0:
@@ -56,13 +56,13 @@ def non_dominated_front(objectives: np.ndarray) -> np.ndarray:
 def pareto_rank_and_crowding(
     objectives: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """NSGA-II 非支配排序 + 拥挤度距离。
+    """NSGA-II non-dominated sorting + crowding distance.
 
     Args:
-        objectives: 目标矩阵，shape (n, m)，最大化约定
+        objectives: objective matrix, shape (n, m), maximization convention
 
     Returns:
-        (rank, crowding)：每个个体的支配等级与拥挤度
+        (rank, crowding): dominance rank and crowding distance of each individual
     """
     n = len(objectives)
     ranks = np.full(n, -1, dtype=int)
@@ -81,14 +81,14 @@ def pareto_rank_and_crowding(
 
 
 def hypervolume_2d(points: np.ndarray, ref: np.ndarray) -> float:
-    """二维精确超体积（最大化约定）。
+    """Exact 2D hypervolume (maximization convention).
 
     Args:
-        points: 目标点集，shape (n, 2)
-        ref: 参考点（劣于所有点），shape (2,)
+        points: objective points, shape (n, 2)
+        ref: reference point (worse than all points), shape (2,)
 
     Returns:
-        超体积值
+        hypervolume value
     """
     if len(points) == 0:
         return 0.0
@@ -106,14 +106,14 @@ def hypervolume_2d(points: np.ndarray, ref: np.ndarray) -> float:
 
 
 def reference_point(objectives: np.ndarray, margin_ratio: float = 0.1) -> np.ndarray:
-    """从数据计算超体积参考点（各维度最差值再向外扩展）。
+    """Compute the hypervolume reference point from the data (worst value per dimension, extended outward).
 
     Args:
-        objectives: 目标矩阵（最大化约定）
-        margin_ratio: 外扩比例
+        objectives: objective matrix (maximization convention)
+        margin_ratio: outward margin ratio
 
     Returns:
-        参考点向量
+        reference point vector
     """
     worst = np.min(objectives, axis=0)
     best = np.max(objectives, axis=0)
@@ -122,12 +122,12 @@ def reference_point(objectives: np.ndarray, margin_ratio: float = 0.1) -> np.nda
 
 
 def _dominates(a: np.ndarray, b: np.ndarray) -> bool:
-    """a 是否 Pareto 支配 b（最大化约定）。"""
+    """Whether a Pareto-dominates b (maximization convention)."""
     return bool(np.all(a >= b) and np.any(a > b))
 
 
 def _crowding_distance(front: np.ndarray) -> np.ndarray:
-    """计算给定前沿点集的拥挤度距离。"""
+    """Compute the crowding distance of the given front points."""
     n, m = front.shape
     distances = np.zeros(n)
     for dim in range(m):

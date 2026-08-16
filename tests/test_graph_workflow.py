@@ -1,4 +1,4 @@
-"""LangGraph 编排工作流测试：状态图构建、SEW 双模式、LLM 失败重试/兜底、与确定性工作流等价。"""
+"""LangGraph orchestration workflow tests: state graph construction, SEW dual-mode, LLM failure retry/fallback, and equivalence with the procedural workflow."""
 
 import numpy as np
 import pytest
@@ -40,7 +40,7 @@ class TestGraphWorkflow:
         assert a.fitness == b.fitness
 
     def test_interface_parity_with_agent_workflow(self):
-        """同一模拟 LLM + 同种子：图编排与过程式工作流结果一致。"""
+        """Same simulated LLM + same seed: graph orchestration and procedural workflow give identical results."""
         llm = MockLLMClient()
         prompt = default_prompt()
         graph = GraphWorkflow(RastriginProblem(), budget=20, llm=llm)
@@ -58,7 +58,7 @@ class TestGraphWorkflow:
 
 class TestGraphFailureHandling:
     class _FlakyClient(MockLLMClient):
-        """前 fail_times 次失败，之后成功。"""
+        """Fails the first fail_times calls, then succeeds."""
 
         def __init__(self, fail_times: int):
             super().__init__()
@@ -76,13 +76,13 @@ class TestGraphFailureHandling:
         wf = GraphWorkflow(RastriginProblem(), budget=20, llm=llm)
         ind = wf.run(default_prompt(), seed=1)
         assert ind.fitness is not None
-        assert llm.calls == 3  # 1 次初始 + 2 次重试
+        assert llm.calls == 3  # 1 initial call + 2 retries
 
     def test_retries_then_fallback(self):
         llm = self._FlakyClient(fail_times=999)
         wf = GraphWorkflow(RastriginProblem(), budget=20, llm=llm)
         ind = wf.run(default_prompt(), seed=1)
-        assert ind.fitness is not None  # 随机策略兜底仍返回评估结果
+        assert ind.fitness is not None  # random-strategy fallback still returns an evaluated result
         assert llm.calls == 1 + MAX_LLM_RETRIES
 
     def test_success_no_retry(self):

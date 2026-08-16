@@ -1,13 +1,14 @@
-"""轻量 RAG 知识库：算法使用指南与最佳实践。
+"""Lightweight RAG knowledge base: algorithm usage guides and best practices.
 
-设计文档指定 Chroma + BGE 嵌入向量库，此处提供轻量实现：
-- 关键词 TF 检索（无重型依赖）
-- 接口与向量库对齐（add/retrieve），后续可平滑替换为 Chroma
+The design document specifies a Chroma + BGE embedding vector store; this module
+provides a lightweight implementation:
+- Keyword TF retrieval (no heavy dependencies)
+- Interface aligned with a vector store (add/retrieve), allowing a smooth swap to Chroma later
 """
 
 from dataclasses import dataclass, field
 
-# 内置知识文档：各优化算法的使用指南
+# Built-in knowledge documents: usage guides for each optimization algorithm
 _KNOWLEDGE_DOCS: list[str] = [
     "CMA-ES 适合连续空间黑盒优化的局部精调：步长 sigma 初始取参数范围的 10%-25%，"
     "目标函数平滑或近凸时收敛极快，多峰时建议配合全局探索阶段使用。",
@@ -25,19 +26,19 @@ _KNOWLEDGE_DOCS: list[str] = [
 
 @dataclass
 class KnowledgeBase:
-    """轻量关键词检索知识库。"""
+    """Lightweight keyword-retrieval knowledge base."""
 
     docs: list[str] = field(default_factory=lambda: list(_KNOWLEDGE_DOCS))
 
     def retrieve(self, query: str, top_k: int = 3) -> list[str]:
-        """按关键词 TF 分数检索最相关文档。
+        """Retrieve the most relevant documents by keyword TF score.
 
         Args:
-            query: 查询文本
-            top_k: 返回数量
+            query: Query text
+            top_k: Number of documents to return
 
         Returns:
-            相关文档列表
+            List of relevant documents
         """
         if not query.strip():
             return []
@@ -53,7 +54,7 @@ class KnowledgeBase:
 
 
 def _tokenize(text: str) -> list[str]:
-    """极简分词：拉丁词 + 双字中文 n-gram。"""
+    """Minimal tokenizer: Latin words plus two-character Chinese n-grams."""
     import re
 
     tokens: list[str] = []

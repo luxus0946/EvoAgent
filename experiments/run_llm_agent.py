@@ -1,13 +1,14 @@
-"""阶段二/三实验：LLM Agent 提示词进化 vs SEW 双模式 vs 固定提示词 vs 阶段一无 LLM。
+"""Phase 2/3 experiment: LLM Agent prompt evolution vs SEW dual-mode vs fixed prompt vs phase-1 no-LLM.
 
-对比口径（同 LLM 调用次数）：
-- evolve：EvoAgent-LLM，种群进化提示词基因（角色/思维风格/工具偏好/探索偏置）
-- sew：SEW 双模式（阶段三），种群中 structure 型（策略基因 + EoH 算子）
-  与 prompt 型（提示词基因）共存进化，LLM 调用次数与 evolve 相同
-- fixed：固定默认提示词基线，个体数相同、每代重新评估（LLM 调用次数与 evolve 相同）
-- phase1：阶段一无 LLM EvoAgent（同种群规模、同单个体预算）作参照
+Comparison setup (identical LLM call counts):
+- evolve: EvoAgent-LLM, population evolves prompt genes (role/thinking style/tool preference/exploration bias)
+- sew: SEW dual-mode (phase 3), population co-evolves structure-type (strategy genes + EoH operators)
+  and prompt-type (prompt genes) individuals, LLM call count identical to evolve
+- fixed: fixed default prompt baseline, same number of individuals, re-evaluated each generation
+  (LLM call count identical to evolve)
+- phase1: phase-1 no-LLM EvoAgent (same population size, same per-individual budget) as reference
 
-默认使用模拟 LLM（无 API 成本、可复现）；`--llm real` 时调用 DeepSeek API。
+Defaults to a simulated LLM (no API cost, reproducible); `--llm real` calls the DeepSeek API.
 """
 
 import argparse
@@ -46,7 +47,7 @@ def run_llm_mode(
     budget: int,
     seed: int,
 ) -> tuple[float, list[float], dict]:
-    """运行一种 LLM 模式，返回 (clean_fitness, best_history, best_prompt_dict)。"""
+    """Run one LLM mode, return (clean_fitness, best_history, best_prompt_dict)."""
     set_seed(seed)
     workflow = AgentWorkflow(
         problem,
@@ -97,7 +98,7 @@ def run_llm_mode(
 
 
 def run_phase1(problem, pop_size: int, max_generations: int, budget: int, seed: int):
-    """运行阶段一无 LLM EvoAgent。"""
+    """Run phase-1 EvoAgent without LLM."""
     config = EvolutionConfig(
         multi_objective=False,
         n_objectives=problem.n_objectives,
@@ -115,9 +116,9 @@ def run_phase1(problem, pop_size: int, max_generations: int, budget: int, seed: 
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="EvoAgent 阶段二：LLM 提示词进化实验")
+    parser = argparse.ArgumentParser(description="EvoAgent phase 2: LLM prompt evolution experiment")
     parser.add_argument("--llm", choices=["mock", "real"], default="mock",
-                        help="mock=模拟 LLM（默认，可复现）；real=DeepSeek API")
+                        help="mock=simulated LLM (default, reproducible); real=DeepSeek API")
     parser.add_argument("--mode", choices=["both", "evolve", "sew", "fixed", "phase1"], default="both")
     parser.add_argument("--pop", type=int, default=8)
     parser.add_argument("--gens", type=int, default=10)
@@ -174,7 +175,7 @@ def main() -> None:
             "best_prompts": best_prompts,
         }
 
-    # 收敛曲线（LLM 模式按代，phase1 按代，统一为代号网格）
+    # Convergence curves (LLM modes by generation, phase1 by generation, aligned to a common grid)
     gen_count = args.gens + 1
     curves = {}
     for mode, res in results.items():
@@ -213,7 +214,7 @@ def main() -> None:
 
 
 def _write_report(summary: dict, output_dir: Path) -> None:
-    """生成实验 Markdown 报告。"""
+    """Generate the experiment Markdown report."""
     cfg = summary["config"]
     lines = [
         "# EvoAgent 阶段二/三报告：LLM 提示词进化 + SEW 双模式",

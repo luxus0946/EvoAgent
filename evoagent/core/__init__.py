@@ -1,1 +1,1 @@
-"""核心层：Agent 个体与其可进化策略基因。"""
+"""Core layer: agent individuals and their evolvable strategy genomes."""

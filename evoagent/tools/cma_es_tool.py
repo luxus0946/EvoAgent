@@ -1,4 +1,4 @@
-"""CMA-ES 工具：协方差矩阵自适应进化策略（Hansen 简化实现，numpy 自研）。"""
+"""CMA-ES tool: covariance matrix adaptation evolution strategy (simplified Hansen implementation, self-implemented in numpy)."""
 
 import numpy as np
 
@@ -7,10 +7,10 @@ from evoagent.tools.base import EarlyStopMonitor, OptimizationTool, ToolResult
 
 
 class CMAESTool(OptimizationTool):
-    """CMA-ES (mu, lambda) 进化策略，连续空间黑盒优化。
+    """CMA-ES (mu, lambda) evolution strategy for black-box optimization in continuous spaces.
 
-    超参（可通过策略基因进化）：
-    - sigma0: 初始步长（相对参数范围）
+    Hyperparameters (evolvable via the strategy genome):
+    - sigma0: Initial step size (relative to the parameter range)
     """
 
     name = "cma_es"

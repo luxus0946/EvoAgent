@@ -1,4 +1,4 @@
-"""LLM 客户端：OpenAI 兼容接口直连 + 模拟实现（无 Key 时回退）。"""
+"""LLM client: direct OpenAI-compatible API plus a mock implementation (falls back when no key is set)."""
 
 import json
 import logging
@@ -13,40 +13,40 @@ logger = logging.getLogger("evoagent.llm")
 
 
 class LLMError(Exception):
-    """LLM 调用异常。"""
+    """Exception raised for LLM call failures."""
 
     pass
 
 
 class LLMClient(ABC):
-    """LLM 客户端抽象基类。"""
+    """Abstract base class for LLM clients."""
 
     @abstractmethod
     def chat_json(self, system: str, user: str, seed: int | None = None) -> dict:
-        """以 JSON 结构返回对话结果。
+        """Return the chat result as a JSON structure.
 
         Args:
-            system: 系统提示
-            user: 用户提示
-            seed: 随机种子（模拟实现使用）
+            system: System prompt
+            user: User prompt
+            seed: Random seed (used by the mock implementation)
 
         Returns:
-            解析后的 JSON 字典
+            Parsed JSON dictionary
 
         Raises:
-            LLMError: 调用或解析失败
+            LLMError: If the call or parsing fails
         """
         raise NotImplementedError
 
 
 class OpenAILLMClient(LLMClient):
-    """OpenAI 兼容 API 客户端（DeepSeek 等）。"""
+    """OpenAI-compatible API client (DeepSeek, etc.)."""
 
     def __init__(self, config: LLMConfig | None = None):
-        """初始化。
+        """Initialize.
 
         Args:
-            config: LLM 配置
+            config: LLM configuration
         """
         self.config = config or LLMConfig()
         if not self.config.enabled:
@@ -77,16 +77,16 @@ class OpenAILLMClient(LLMClient):
 
 
 class MockLLMClient(LLMClient):
-    """模拟 LLM 客户端：按提示词基因字段规则化生成策略。
+    """Mock LLM client: generates a strategy from the prompt-genome fields by rules.
 
-    无 API Key 时用于全链路验证与单元测试。
+    Used for end-to-end validation and unit tests when no API key is set.
     """
 
     def __init__(self, rng: np.random.Generator | None = None):
-        """初始化。
+        """Initialize.
 
         Args:
-            rng: 随机数生成器（用于参数抖动，固定种子可复现）
+            rng: Random number generator (used for parameter jitter; a fixed seed gives reproducibility)
         """
         self.rng = rng or np.random.default_rng(42)
 
@@ -155,7 +155,7 @@ class MockLLMClient(LLMClient):
 
 
 def _parse_json(content: str) -> dict:
-    """从 LLM 输出中提取 JSON（容忍代码块包裹与多余文本）。"""
+    """Extract JSON from LLM output (tolerates code fences and extra text)."""
     text = content.strip()
     if "```" in text:
         text = text.split("```")[1]
@@ -168,13 +168,13 @@ def _parse_json(content: str) -> dict:
 
 
 def build_llm_client(config: LLMConfig | None = None) -> LLMClient:
-    """构建 LLM 客户端：有 Key 用真实 API，否则回退模拟实现。
+    """Build an LLM client: use the real API when a key is set, otherwise fall back to the mock.
 
     Args:
-        config: LLM 配置
+        config: LLM configuration
 
     Returns:
-        LLM 客户端实例
+        LLM client instance
     """
     config = config or LLMConfig()
     if config.enabled:
@@ -187,7 +187,7 @@ def build_llm_client(config: LLMConfig | None = None) -> LLMClient:
 
 
 def timed_chat(client: LLMClient, system: str, user: str, seed: int | None = None) -> dict:
-    """带计时与日志的 LLM 调用。"""
+    """LLM call with timing and logging."""
     t0 = time.perf_counter()
     result = client.chat_json(system, user, seed)
     logger.debug("LLM 调用耗时 %.2fs", time.perf_counter() - t0)

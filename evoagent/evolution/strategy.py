@@ -1,10 +1,10 @@
-"""策略执行器：将个体的策略基因映射为一次完整的优化任务执行。
+"""Strategy executor: maps an individual's strategy genome to a complete optimization task run.
 
-两阶段策略：
-1. 第一阶段：用 initial_tool 运行 switch_after_ratio * budget 次评估；
-2. 第二阶段：从当前最优出发，用 second_tool 运行剩余预算（工具不同时）。
-若 switch_after_ratio >= 0.95 或两工具相同，则单阶段运行。
-stop_patience 控制早停：连续无改进达到预算比例时提前终止。
+Two-phase strategy:
+1. Phase 1: run initial_tool for switch_after_ratio * budget evaluations;
+2. Phase 2: continue from the current best with second_tool for the remaining budget (when the tools differ).
+If switch_after_ratio >= 0.95 or the two tools are identical, run as a single phase.
+stop_patience controls early stopping: terminate early when consecutive non-improvements reach the budget ratio.
 """
 
 import numpy as np
@@ -16,14 +16,14 @@ from evoagent.tools.factory import build_tool
 
 
 class StrategyExecutor:
-    """在给定问题上执行一个策略基因。"""
+    """Execute a strategy genome on the given problem."""
 
     def __init__(self, problem: OptimizationProblem, weights: np.ndarray | None = None):
-        """初始化。
+        """Initialize.
 
         Args:
-            problem: 优化问题
-            weights: 标量化权重（None 时使用问题默认均匀权重）
+            problem: optimization problem
+            weights: scalarization weights (None uses the problem's default uniform weights)
         """
         self.problem = problem
         self.weights = weights
@@ -34,15 +34,15 @@ class StrategyExecutor:
         budget: int,
         rng: np.random.Generator | None = None,
     ) -> ToolResult:
-        """执行策略。
+        """Execute the strategy.
 
         Args:
-            genome: 策略基因
-            budget: 总评估预算
-            rng: 随机数生成器
+            genome: strategy genome
+            budget: total evaluation budget
+            rng: random number generator
 
         Returns:
-            ToolResult：各阶段合并后的最优结果与收敛曲线
+            ToolResult: merged best result and convergence curve across phases
         """
         if rng is None:
             rng = np.random.default_rng()
@@ -112,12 +112,12 @@ class StrategyExecutor:
 
     @staticmethod
     def _merge(results: list[ToolResult]) -> ToolResult:
-        """合并多阶段结果：取全局最优，拼接收敛曲线。"""
+        """Merge multi-phase results: take the global best and concatenate the convergence curves."""
         best = max(results, key=lambda r: r.best_fitness)
         history: list[float] = []
         for r in results:
             history.extend(r.history)
-        # 曲线拼接时保持单调（全局最优）
+        # Keep the concatenated curve monotonic (global best)
         monotonic: list[float] = []
         for v in history:
             if not monotonic or v > monotonic[-1]:

@@ -1,8 +1,8 @@
-"""多种群岛屿模型：探索 / 平衡 / 利用三种群 + 环状迁移。
+"""Multi-population island model: explore / balance / exploit populations + ring migration.
 
-- 探索岛：高变异率、低选择压力，保持多样性
-- 平衡岛：中等变异率与选择压力
-- 利用岛：低变异率、高选择压力，局部精调
+- explore island: high mutation rate, low selection pressure, maintains diversity
+- balance island: moderate mutation rate and selection pressure
+- exploit island: low mutation rate, high selection pressure, local fine-tuning
 """
 
 from dataclasses import dataclass
@@ -34,7 +34,7 @@ DEFAULT_ISLAND_NAMES = ["explore", "balance", "exploit"]
 
 @dataclass
 class IslandStats:
-    """岛屿统计信息。"""
+    """Island statistics."""
 
     name: str
     best_fitness: float
@@ -44,7 +44,7 @@ class IslandStats:
 
 
 class IslandModel:
-    """岛屿模型种群管理。"""
+    """Island-model population management."""
 
     def __init__(
         self,
@@ -60,20 +60,20 @@ class IslandModel:
         elite_ratio: float = 0.1,
         fitness_weights: np.ndarray | None = None,
     ):
-        """初始化。
+        """Initialize.
 
         Args:
-            problem: 优化问题
-            island_names: 岛屿名称列表（决定岛屿数量与进化特征）
-            population_size: 每个岛屿的种群大小
-            seed: 随机种子
-            migration_interval: 迁移间隔（代）
-            migration_rate: 迁移比例
-            multi_objective: 多目标模式
-            eval_budget_per_individual: 个体策略评估预算
-            crossover_rate: 交叉率
-            elite_ratio: 精英比例
-            fitness_weights: 标量化权重（单目标模式）
+            problem: optimization problem
+            island_names: island name list (determines the number of islands and their evolution characteristics)
+            population_size: population size per island
+            seed: random seed
+            migration_interval: migration interval (generations)
+            migration_rate: migration ratio
+            multi_objective: multi-objective mode
+            eval_budget_per_individual: individual strategy evaluation budget
+            crossover_rate: crossover rate
+            elite_ratio: elite ratio
+            fitness_weights: scalarization weights (single-objective mode)
         """
         self.names = island_names or DEFAULT_ISLAND_NAMES
         self.population_size = population_size
@@ -103,11 +103,11 @@ class IslandModel:
 
     @property
     def n_individuals(self) -> int:
-        """全部个体数量。"""
+        """Total number of individuals."""
         return len(self.names) * self.population_size
 
     def evaluate_all(self) -> int:
-        """评估所有岛的个体，返回总评估次数。"""
+        """Evaluate individuals on all islands and return the total number of evaluations."""
         total = 0
         for island in self.islands:
             island.evaluate_all()
@@ -115,7 +115,7 @@ class IslandModel:
         return total
 
     def next_generation(self) -> None:
-        """周期性环状迁移（基于上一代已评估的适应度），随后各岛内部进化。"""
+        """Periodic ring migration (based on fitness evaluated in the previous generation), then evolve each island internally."""
         if self.generation > 0 and self.generation % self.migration_interval == 0:
             self._migrate()
         for island in self.islands:
@@ -123,9 +123,9 @@ class IslandModel:
         self.generation += 1
 
     def _migrate(self) -> None:
-        """环状迁移：每岛最优的 migration_rate 比例个体替换下一岛最差个体。
+        """Ring migration: each island's best migration_rate-fraction of individuals replaces the next island's worst.
 
-        先对各岛排序取快照，再统一执行替换，避免迁移中途影响后续排序。
+        Sort each island and take a snapshot first, then apply all replacements at once, so sorting during migration is not affected.
         """
         n = len(self.islands)
         n_migrate = max(1, int(self.population_size * self.migration_rate))
@@ -146,12 +146,12 @@ class IslandModel:
                 target.individuals.append(migrants[i][j].clone())
 
     def best_individual(self):
-        """全局最优个体。"""
+        """Global best individual."""
         bests = [island.best_individual() for island in self.islands]
         return max(bests, key=lambda ind: ind.fitness)
 
     def stats(self) -> list[IslandStats]:
-        """各岛统计。"""
+        """Per-island statistics."""
         return [
             IslandStats(
                 name=self.names[i],

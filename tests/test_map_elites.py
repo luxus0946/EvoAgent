@@ -1,4 +1,4 @@
-"""MAP-Elites 档案与三路父代采样测试。"""
+"""MAP-Elites archive and three-way parent sampling tests."""
 
 import numpy as np
 import pytest

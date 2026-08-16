@@ -1,1 +1,1 @@
-"""环境与评估层：仿真环境、基准测试函数、适应度评估。"""
+"""Environment and evaluation layer: simulation environment, benchmark functions, and fitness evaluation."""

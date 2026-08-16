@@ -1,4 +1,4 @@
-"""运行单次进化实验：输出配置、结果、每代 CSV、收敛曲线与 Pareto 图。"""
+"""Run a single evolution experiment: output config, result, per-generation CSV, convergence curve and Pareto plot."""
 
 import argparse
 import json
@@ -20,7 +20,7 @@ from evoagent.utils.visualization import plot_convergence_curves, plot_pareto_fr
 
 
 def resolve_problem(name: str):
-    """按名称解析测试问题实例。"""
+    """Resolve a test problem instance by name."""
     if name == "semiconductor":
         return SemiconductorSimulator()
     if name in BENCHMARK_REGISTRY:
@@ -34,25 +34,25 @@ DEFAULT_WEIGHTS = {
 
 
 def default_weights_for(problem) -> np.ndarray | None:
-    """问题默认标量化权重（半导体为设计文档中的良率/成本/周期权重）。"""
+    """Default scalarization weights for a problem (semiconductor uses the yield/cost/cycle weights from the design doc)."""
     return DEFAULT_WEIGHTS.get(problem.name)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="运行 EvoAgent 进化实验")
+    parser = argparse.ArgumentParser(description="Run an EvoAgent evolution experiment")
     parser.add_argument("--problem", default="semiconductor",
-                        help="问题: semiconductor/rosenbrock/ackley/rastrigin/zdt1")
+                        help="problem: semiconductor/rosenbrock/ackley/rastrigin/zdt1")
     parser.add_argument("--generations", type=int, default=10)
     parser.add_argument("--population", type=int, default=8)
     parser.add_argument("--islands", type=int, default=3)
     parser.add_argument("--budget", type=int, default=300,
-                        help="每个个体执行策略的评估预算")
+                        help="evaluation budget for the strategy executed by each individual")
     parser.add_argument("--multi-objective", action="store_true")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--checkpoint", default=None,
-                        help="检查点文件路径（每代保存，可与 --resume 配合断点续跑）")
+                        help="checkpoint file path (saved each generation, pairs with --resume for continuation)")
     parser.add_argument("--resume", action="store_true",
-                        help="从 --checkpoint 指定的检查点断点续跑")
+                        help="resume from the checkpoint specified by --checkpoint")
     parser.add_argument("--output", default="./data/results")
     args = parser.parse_args()
 

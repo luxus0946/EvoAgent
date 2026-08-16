@@ -1,18 +1,18 @@
-"""可进化提示词基因（阶段二：LLM Agent 层）。
+"""Evolvable prompt genome (phase 2: LLM agent layer).
 
-对应设计文档 3.2.1：角色、思维风格、工具偏好、收敛阈值、最大迭代、探索偏置。
-进化算子（交叉/变异）作用于这些字段，种群进化驱动提示词的自我改进。
+Corresponds to design doc 3.2.1: role, thinking style, tool preference, stopping threshold, max iterations, exploration bias.
+Evolutionary operators (crossover/mutation) act on these fields; population evolution drives self-improvement of the prompts.
 """
 
 import numpy as np
 from dataclasses import dataclass
 
-# 离散字段的可选值
+# Allowed values for discrete fields
 ROLE_OPTIONS = ["expert_optimizer", "analyst", "strategist"]
 THINKING_STYLE_OPTIONS = ["step_by_step", "chain_of_thought", "tree_of_thought"]
 TOOL_PREFERENCE_OPTIONS = ["cma_es_first", "bo_first", "ga_first", "ppo_first", "diversify_first"]
 
-# 连续字段范围
+# Ranges for continuous fields
 _STOPPING_RANGE = (0.05, 0.5)
 _EXPLORATION_RANGE = (0.0, 1.0)
 _MAX_ITERATIONS_RANGE = (5, 50)
@@ -20,7 +20,7 @@ _MAX_ITERATIONS_RANGE = (5, 50)
 
 @dataclass
 class EvolvablePrompt:
-    """可进化提示词基因。"""
+    """Evolvable prompt genome."""
 
     role: str = "expert_optimizer"
     thinking_style: str = "chain_of_thought"
@@ -30,7 +30,7 @@ class EvolvablePrompt:
     exploration_bias: float = 0.5
 
     def clone(self) -> "EvolvablePrompt":
-        """深拷贝提示词基因。"""
+        """Deep-copy the prompt genome."""
         return EvolvablePrompt(
             role=self.role,
             thinking_style=self.thinking_style,
@@ -42,13 +42,13 @@ class EvolvablePrompt:
 
 
 def random_prompt(rng: np.random.Generator) -> EvolvablePrompt:
-    """随机生成一个提示词基因。
+    """Generate a random prompt genome.
 
     Args:
-        rng: 随机数生成器
+        rng: random number generator
 
     Returns:
-        随机提示词基因
+        a random prompt genome
     """
     return EvolvablePrompt(
         role=str(rng.choice(ROLE_OPTIONS)),
@@ -61,7 +61,7 @@ def random_prompt(rng: np.random.Generator) -> EvolvablePrompt:
 
 
 def default_prompt() -> EvolvablePrompt:
-    """固定默认提示词（基线用）。"""
+    """Fixed default prompt (for baseline runs)."""
     return EvolvablePrompt()
 
 
@@ -74,15 +74,15 @@ def mutate_prompt(
     rate: float,
     rng: np.random.Generator | None = None,
 ) -> EvolvablePrompt:
-    """提示词基因变异（原地修改，调用方负责克隆）。
+    """Mutate a prompt genome (in place; the caller is responsible for cloning).
 
     Args:
-        prompt: 提示词基因
-        rate: 变异率
-        rng: 随机数生成器
+        prompt: prompt genome
+        rate: mutation rate
+        rng: random number generator
 
     Returns:
-        变异后的提示词基因
+        the mutated prompt genome
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -126,16 +126,16 @@ def crossover_prompt(
     probability: float = 0.5,
     rng: np.random.Generator | None = None,
 ) -> EvolvablePrompt:
-    """提示词均匀交叉。
+    """Uniform crossover of prompts.
 
     Args:
-        p1: 父代 1
-        p2: 父代 2
-        probability: 离散字段交换概率
-        rng: 随机数生成器
+        p1: parent 1
+        p2: parent 2
+        probability: swap probability for discrete fields
+        rng: random number generator
 
     Returns:
-        子代提示词基因
+        the offspring prompt genome
     """
     if rng is None:
         rng = np.random.default_rng()

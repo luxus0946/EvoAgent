@@ -1,4 +1,4 @@
-"""环境层测试：仿真环境、基准函数、适应度与多目标排序。"""
+"""Environment layer tests: simulation environment, benchmark functions, fitness and multi-objective ranking."""
 
 import numpy as np
 import pytest
@@ -31,7 +31,7 @@ class TestSimulator:
             x = rng.uniform(0, 1, 8)
             y = sim.evaluate_clean(x)
             assert np.all(y >= 0.0) and np.all(y <= 1.0)
-            assert y[0] > 0.0  # yield 恒为正
+            assert y[0] > 0.0  # yield is always positive
 
     def test_noise_added(self):
         sim = SemiconductorSimulator()
@@ -84,7 +84,7 @@ class TestBenchmarks:
 
     def test_zdt1_optimum_front(self):
         problem = ZDT1Problem()
-        # 最优前沿上 f2 = 1 - sqrt(f1)
+        # On the optimal front, f2 = 1 - sqrt(f1)
         x = np.array([0.25] + [0.0] * 9)
         f1, f2 = problem.evaluate_clean(x)
         assert f1 == pytest.approx(0.25)
@@ -98,7 +98,7 @@ class TestFitness:
     def test_non_dominated_front(self):
         points = np.array([[1.0, 0.0], [0.0, 1.0], [0.8, 0.8], [0.5, 0.4]])
         front = non_dominated_front(points)
-        assert len(front) == 3  # 仅 (0.5,0.4) 被支配
+        assert len(front) == 3  # only (0.5, 0.4) is dominated
 
     def test_pareto_rank(self):
         points = np.array([[1.0, 1.0], [0.5, 0.5], [0.2, 0.2]])
@@ -106,9 +106,9 @@ class TestFitness:
         assert list(ranks) == [0, 1, 2]
 
     def test_hypervolume_2d_exact(self):
-        # 点 (1,1) 相对原点 (0,0) 的超体积 = 1
+        # Hypervolume of point (1,1) relative to origin (0,0) = 1
         assert hypervolume_2d(np.array([[1.0, 1.0]]), np.array([0.0, 0.0])) == pytest.approx(1.0)
-        # 两非支配点 (1,0.5),(0.5,1) → 1*0.5 + (1-0.5)*(1-0.5) = 0.75
+        # Two non-dominated points (1,0.5),(0.5,1) -> 1*0.5 + (1-0.5)*(1-0.5) = 0.75
         hv = hypervolume_2d(np.array([[1.0, 0.5], [0.5, 1.0]]), np.array([0.0, 0.0]))
         assert hv == pytest.approx(0.75)
 

@@ -1,4 +1,4 @@
-"""Agent 个体与策略基因测试。"""
+"""Agent individual and strategy genome tests."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""随机种子管理：保证实验可复现。"""
+"""Random seed management: ensures reproducible experiments."""
 
 import random
 
@@ -6,23 +6,23 @@ import numpy as np
 
 
 def set_seed(seed: int) -> None:
-    """设置全局随机种子。
+    """Set the global random seed.
 
     Args:
-        seed: 随机种子
+        seed: Random seed
     """
     random.seed(seed)
     np.random.seed(seed)
 
 
 def make_rng(seed: int) -> np.random.Generator:
-    """创建独立的随机数生成器。
+    """Create an independent random number generator.
 
     Args:
-        seed: 随机种子
+        seed: Random seed
 
     Returns:
-        独立 RNG 实例
+        Independent RNG instance
     """
     return np.random.default_rng(seed)
 
@@ -31,11 +31,11 @@ _GLOBAL_RNG = np.random.default_rng()
 
 
 def get_global_rng() -> np.random.Generator:
-    """返回全局 RNG（Agent 工作流等无显式种子场景使用）。"""
+    """Return the global RNG (used by the Agent workflow and other contexts without an explicit seed)."""
     return _GLOBAL_RNG
 
 
 def set_global_seed(seed: int) -> None:
-    """重置全局 RNG 种子。"""
+    """Reset the global RNG seed."""
     global _GLOBAL_RNG
     _GLOBAL_RNG = np.random.default_rng(seed)
