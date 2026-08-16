@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 ROOT = Path(__file__).resolve().parents[1]
 VERIFY_DIR = ROOT / "data" / "results" / "verification_20260814_190641"
-LLM_DIR = ROOT / "data" / "results" / "llm_agent_20260815_141731"
+LLM_DIR = ROOT / "data" / "results" / "llm_agent_20260816_205230"
 META_DIR = ROOT / "data" / "results" / "meta_20260816_190602"
 OUT = ROOT / "figures"
 
@@ -103,7 +103,7 @@ def multi_objective_chart() -> None:
 
 
 def phase2_chart() -> None:
-    """阶段二/三：提示词进化 vs SEW 双模式 vs 固定提示词 vs 阶段一。"""
+    """阶段二/三：提示词进化 vs SEW 双模式 vs 固定提示词 vs 阶段一（真实 DeepSeek）。"""
     modes = ["llm_evolve", "llm_sew", "llm_fixed", "phase1"]
     labels = [
         "LLM evolve\n(evolved prompts)",
@@ -111,18 +111,18 @@ def phase2_chart() -> None:
         "LLM fixed\n(fixed prompt)",
         "Phase 1\n(no LLM)",
     ]
-    means = [0.072797, 0.068730, 0.070688, 0.069053]
-    stds = [0.004031, 0.004386, 0.003604, 0.004443]
+    means = [0.071614, 0.068668, 0.067320, 0.070018]
+    stds = [0.006002, 0.004511, 0.003173, 0.007152]
     colors = ["#d62728", "#8c564b", "#ff9896", "#1f77b4"]
     fig, ax = plt.subplots(figsize=(8.5, 4.4))
     bars = ax.bar(modes, means, yerr=stds, capsize=5, color=colors, alpha=0.9)
-    ax.annotate("+3.0%", (0, 0.074), xytext=(0, 0.078), ha="center",
+    ax.annotate("+2.3%", (0, 0.0735), xytext=(0, 0.078), ha="center",
                 fontsize=10, fontweight="bold", color="#d62728",
                 arrowprops=dict(arrowstyle="->", color="#d62728"))
     ax.set_xticks(modes)
     ax.set_xticklabels(labels)
     ax.set_ylabel("Mean clean fitness (higher is better)")
-    ax.set_title("Phase 2/3: prompt evolution vs SEW vs baselines (mock LLM, 3 seeds)")
+    ax.set_title("Phase 2/3: prompt evolution vs SEW vs baselines (DeepSeek, temp 0.4, 3 seeds)")
     ax.set_ylim(0.05, 0.09)
     fig.tight_layout()
     fig.savefig(OUT / "phase2_llm_comparison.png")
@@ -152,7 +152,7 @@ def convergence_charts() -> None:
                 linewidth=2.0 if name == "llm_evolve" else 1.4, marker="o", markersize=3)
     ax.set_xlabel("Generation")
     ax.set_ylabel("Best fitness (mean of 3 seeds)")
-    ax.set_title("Semiconductor: prompt evolution vs SEW convergence (Phase 2/3)")
+    ax.set_title("Semiconductor: prompt evolution vs SEW convergence (DeepSeek real LLM)")
     ax.legend()
     fig.tight_layout()
     fig.savefig(OUT / "llm_convergence.png")

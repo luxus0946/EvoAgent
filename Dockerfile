@@ -9,13 +9,15 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# 国内网络下用镜像源加速依赖安装（构建时可用 --build-arg 覆盖）
+ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -i $PIP_INDEX_URL -r requirements.txt
 
 COPY evoagent/ evoagent/
 COPY app/ app/
 COPY experiments/ experiments/
-COPY config.py config.py 2>/dev/null || true
+COPY config.py ./
 
 EXPOSE 8000 7860
 

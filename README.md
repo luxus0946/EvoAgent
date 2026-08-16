@@ -107,24 +107,28 @@ docker compose up --build
   种群以并行策略尝试 + 进化选择换取更高样本利用与稳定性。
 - 半导体问题含高斯测量噪声（良率 σ=0.02），指标使用无噪声值重评。
 
-# 阶段二/三：LLM 提示词进化 + SEW 双模式（2026-08-15，模拟 LLM，3 seeds）
+# 阶段二/三：LLM 提示词进化 + SEW 双模式（2026-08-16，真实 DeepSeek API，3 seeds）
 
-半导体问题，权重 [0.5, 0.3, 0.2]，每模式 LLM 调用 88 次（8 个体 × 11 代），单策略预算 300：
+半导体问题，权重 [0.5, 0.3, 0.2]，每模式 LLM 调用 42 次（6 个体 × 7 代），单策略预算 300，
+生成温度 0.4（低温度提升策略 JSON 生成稳定性，实测 0.7 → 0.4 使 llm_evolve 提升 0.059 → 0.072）：
 
 | 模式 | 均值 | 标准差 |
 |------|------|--------|
-| llm_evolve（进化提示词） | **0.0728** | 0.0040 |
-| llm_fixed（固定提示词） | 0.0707 | 0.0036 |
-| phase1（无 LLM） | 0.0691 | 0.0044 |
-| llm_sew（SEW 双模式） | 0.0687 | 0.0044 |
+| llm_evolve（进化提示词） | **0.0716** | 0.0060 |
+| phase1（无 LLM） | 0.0700 | 0.0072 |
+| llm_sew（SEW 双模式） | 0.0687 | 0.0045 |
+| llm_fixed（固定提示词） | 0.0673 | 0.0032 |
 
 ![阶段二/三对比](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/phase2_llm_comparison.png)
 
 ![提示词进化收敛曲线](https://ghproxy.net/https://raw.githubusercontent.com/luxus0946/EvoAgent/master/figures/llm_convergence.png)
 
-**结论**：提示词进化稳定领先固定提示词与阶段一基线。SEW 双模式（structure + prompt 共存进化）在
-**模拟 LLM** 下未超过纯提示词进化——模拟 LLM 的策略生成与提示词无关，structure 通道稀释了提示词收敛；
-该设计面向真实 LLM（对提示词敏感的模型）的预期收益需以 `--llm real` 验证。
+**结论**（真实 DeepSeek）：
+1. 提示词进化（llm_evolve）均值最优，领先阶段一无 LLM 基线 **+2.3%**（2/3 种子胜出），
+   领先固定提示词 **+6.4%**——LLM 提示词进化在真实模型上有效。
+2. SEW 双模式（structure + prompt 共存进化）未超过纯提示词进化：structure 通道占用一半
+   种群但收敛慢于 prompt 通道，在 8 维问题上收益不足；作为"策略基因 + 提示词基因联合进化"
+   的框架性探索保留在代码库中。
 
 ## Meta 层：贝叶斯优化自动配置进化超参（2026-08-16，半导体）
 

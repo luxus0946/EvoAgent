@@ -53,7 +53,9 @@ class LLMConfig:
     base_url: str = field(
         default_factory=lambda: os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
     )
-    temperature: float = 0.7
+    temperature: float = field(
+        default_factory=lambda: float(os.getenv("LLM_TEMPERATURE", "0.4"))
+    )
     max_tokens: int = 1024
     timeout_seconds: float = 60.0
 
