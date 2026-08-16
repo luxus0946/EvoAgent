@@ -123,5 +123,6 @@ class GATool(OptimizationTool):
         fitness: np.ndarray,
         rng: np.random.Generator,
     ) -> np.ndarray:
-        candidates = rng.choice(len(pop), self.tournament_size, replace=False)
+        k = min(self.tournament_size, len(pop))
+        candidates = rng.choice(len(pop), k, replace=False)
         return pop[candidates[int(np.argmax(fitness[candidates]))]]

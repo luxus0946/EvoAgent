@@ -140,7 +140,11 @@ def main() -> None:
     else:
         llm_client = MockLLMClient()
 
-    modes = [m for m in MODE_NAMES if args.mode in ("both", m)]
+    modes = [
+        m
+        for m in MODE_NAMES
+        if args.mode == "both" or args.mode == m.replace("llm_", "")
+    ]
     results: dict[str, dict] = {}
     for mode in modes:
         finals: list[float] = []
@@ -231,15 +235,15 @@ def _write_report(summary: dict, output_dir: Path) -> None:
     for mode, row in ranked:
         lines.append(f"| {mode} | {row['mean']:.6f} | {row['std']:.6f} |")
     best_mode, best_row = ranked[0]
-    second_mode, second_row = ranked[1]
-    improve = (best_row["mean"] - second_row["mean"]) / abs(second_row["mean"]) * 100
-    lines += [
-        "",
-        f"**结论**：{best_mode} 以 {improve:.1f}% 优势领先 {second_mode}。",
-        "",
-        "## 二、进化结果（各种子最优个体）",
-        "",
-    ]
+    if len(ranked) >= 2:
+        second_mode, second_row = ranked[1]
+        improve = (best_row["mean"] - second_row["mean"]) / abs(second_row["mean"]) * 100
+        conclusion = f"**结论**：{best_mode} 以 {improve:.1f}% 优势领先 {second_mode}。"
+    else:
+        conclusion = (
+            f"**结论**：{best_mode} 最终适应度 {best_row['mean']:.6f}±{best_row['std']:.6f}。"
+        )
+    lines += ["", conclusion, "", "## 二、进化结果（各种子最优个体）", ""]
     for mode in ("llm_evolve", "llm_sew"):
         prompts = res.get(mode, {}).get("best_prompts", [])
         if not prompts:
