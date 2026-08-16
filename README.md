@@ -165,13 +165,13 @@ evoagent/
 ├── core/          # 第2层：Agent 个体与可进化策略基因 + 可进化提示词基因（genome_prompt）
 ├── evolution/     # 第3层：进化算子（含 EoH 算子）、种群、MAP-Elites 档案、检查点、岛屿模型、进化循环 + LLM 种群（SEW 双模式）
 ├── meta/          # Meta 层：贝叶斯优化自动配置进化超参（超参空间编码 + 内层进化评估）
-├── agent/         # 第4层（阶段二）：LLM 客户端（OpenAI/模拟）、提示词模板、策略生成、RAG 知识库、Agent 工作流
-├── tools/         # 优化工具池：随机搜索/模拟退火/GA/CMA-ES/贝叶斯优化/NSGA-II（numpy 自研）
+├── agent/         # 第4层（阶段二）：LLM 客户端（OpenAI/模拟）、提示词模板、策略生成、RAG 知识库、Agent 工作流（过程式 + LangGraph 状态图双实现）
+├── tools/         # 优化工具池：随机搜索/模拟退火/GA/CMA-ES/贝叶斯优化/NSGA-II/PPO（numpy 自研）
 ├── config.py      # 全局配置（含 LLMConfig）
 └── utils/         # 日志、随机种子、可视化
 app/               # 第5层：FastAPI REST 服务（任务队列）+ Gradio 演示界面
 experiments/       # run_evolution / compare_baselines / run_llm_agent / run_meta_search / make_readme_figures
-tests/             # 117 个单元测试（含 agent 层、检查点、MAP-Elites、EoH 算子、SEW 双模式、Meta 层、API）
+tests/             # 133 个单元测试（含 agent 层、检查点、MAP-Elites、EoH 算子、SEW 双模式、Meta 层、API、LangGraph、PPO）
 Dockerfile / docker-compose.yml   # API + UI 双服务容器化
 ```
 
@@ -184,7 +184,7 @@ Dockerfile / docker-compose.yml   # API + UI 双服务容器化
 - [x] 阶段三（核心四项）：全状态检查点 + 三路父代采样/MAP-Elites + EoH 算子式变异 + SEW 双模式
 - [x] Meta 层：贝叶斯优化自动配置进化超参（半导体 +3.5%）
 - [x] 阶段五：FastAPI REST 服务（后台任务队列）+ Gradio 演示界面 + Docker
-- [ ] 阶段四：LangGraph 编排、PPO 工具接入
+- [x] 阶段四：LangGraph 状态图编排（LLM 失败重试→随机兜底）+ PPO 强化学习工具（numpy 手写，GAE+裁剪目标）
 
 ## 可复现性
 

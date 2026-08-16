@@ -125,7 +125,7 @@ class TestStrategyGenerator:
     def test_fallback_on_invalid(self):
         rng = np.random.default_rng(0)
         g = parse_strategy_with_fallback({"initial_tool": "magic"}, rng)
-        assert g.initial_tool in {"cma_es", "bo", "ga", "random_search", "sa"}
+        assert g.initial_tool in {"cma_es", "bo", "ga", "ppo", "random_search", "sa"}
 
 
 class TestKnowledgeBase:

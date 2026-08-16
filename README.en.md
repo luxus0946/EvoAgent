@@ -8,7 +8,7 @@ hyper-parameters), and the population continuously evolves better strategies thr
 selection, crossover, mutation, and island migration.
 
 - **Phase 1 (verified)**: the evolutionary framework vs. classic baselines
-  (random search, SA, GA, CMA-ES, Bayesian optimization, NSGA-II).
+  (random search, SA, GA, CMA-ES, Bayesian optimization, NSGA-II, PPO).
 - **Phase 2 (verified)**: an **LLM Agent layer** where individuals carry an evolvable
   *prompt genome* (role, thinking style, tool preference, exploration bias). The LLM
   generates the optimization strategy from the prompt plus RAG-retrieved knowledge,
@@ -96,7 +96,7 @@ Mermaid sources: [`docs/framework.mmd`](./docs/framework.mmd), [`docs/llm_agent_
 
 ```
 Individual = evolvable strategy genome
-  ├── initial_tool / second_tool   two-phase tool choice (RS / SA / GA / CMA-ES / BO)
+  ├── initial_tool / second_tool   two-phase tool choice (RS / SA / GA / CMA-ES / BO / PPO)
   ├── switch_after_ratio           when to switch tools
   ├── stop_patience                early-stopping patience
   ├── tool_params                  evolvable tool hyper-parameters
@@ -105,7 +105,7 @@ Individual = evolvable strategy genome
 Individual (Phase 2) = evolvable prompt genome
   ├── role                         expert_optimizer / analyst / strategist
   ├── thinking_style               step_by_step / chain_of_thought / tree_of_thought
-  ├── tool_preference              cma_es_first / bo_first / ga_first / diversify_first
+  ├── tool_preference              cma_es_first / bo_first / ga_first / ppo_first / diversify_first
   ├── stopping_criteria            convergence threshold
   ├── max_iterations               max strategy rounds
   └── exploration_bias             exploration vs. exploitation [0, 1]
@@ -256,12 +256,15 @@ evoagent/
 ├── environment/   # Layer 1: semiconductor simulator + standard benchmarks + fitness (weighted / Pareto / HV)
 ├── core/          # Layer 2: Agent individual + evolvable strategy genome + evolvable prompt genome
 ├── evolution/     # Layer 3: operators, population, strategy executor, island model, loop + LLM prompt population
-├── agent/         # Layer 4 (Phase 2): LLM client (OpenAI / mock), prompt templates, strategy generator, RAG KB, workflow
-├── tools/         # tool pool: random search / SA / GA / CMA-ES / BO / NSGA-II (self-implemented in numpy)
+├── meta/          # Meta layer: Bayesian-optimized evolution hyper-parameters
+├── agent/         # Layer 4 (Phase 2): LLM client (OpenAI / mock), prompt templates, strategy generator, RAG KB, workflow (procedural + LangGraph state graph)
+├── tools/         # tool pool: random search / SA / GA / CMA-ES / BO / NSGA-II / PPO (self-implemented in numpy)
 ├── config.py      # global configuration (incl. LLMConfig)
 └── utils/         # logging, random seeds, visualization
-experiments/       # run_evolution / compare_baselines / run_llm_agent / make_readme_figures
-tests/             # 73 unit tests (24 for the Phase-2 agent layer)
+app/               # Layer 5: FastAPI REST service (task queue) + Gradio demo UI
+experiments/       # run_evolution / compare_baselines / run_llm_agent / run_meta_search / make_readme_figures
+tests/             # 133 unit tests (agent layer, checkpoints, MAP-Elites, EoH, SEW, Meta, API, LangGraph, PPO)
+Dockerfile / docker-compose.yml   # containerized API + UI
 docs/              # Mermaid framework diagrams
 figures/           # charts used by this README
 ```
@@ -275,7 +278,7 @@ figures/           # charts used by this README
 - [x] Phase 3 (core four): full-state checkpoints + three-way parent sampling / MAP-Elites + EoH operator mutation + SEW dual-mode
 - [x] Meta layer: Bayesian-optimized evolution hyperparameters (semiconductor +3.5%)
 - [x] Phase 5: FastAPI REST service (background task queue) + Gradio demo UI + Docker
-- [ ] Phase 4: LangGraph orchestration, PPO tool integration
+- [x] Phase 4: LangGraph state-graph orchestration (LLM retry -> random fallback) + PPO RL tool (hand-written numpy, GAE + clipped objective)
 
 ## Reproducibility
 

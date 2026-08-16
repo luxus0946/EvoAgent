@@ -10,7 +10,7 @@ from dataclasses import dataclass
 # 离散字段的可选值
 ROLE_OPTIONS = ["expert_optimizer", "analyst", "strategist"]
 THINKING_STYLE_OPTIONS = ["step_by_step", "chain_of_thought", "tree_of_thought"]
-TOOL_PREFERENCE_OPTIONS = ["cma_es_first", "bo_first", "ga_first", "diversify_first"]
+TOOL_PREFERENCE_OPTIONS = ["cma_es_first", "bo_first", "ga_first", "ppo_first", "diversify_first"]
 
 # 连续字段范围
 _STOPPING_RANGE = (0.05, 0.5)

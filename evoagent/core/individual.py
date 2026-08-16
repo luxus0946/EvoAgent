@@ -20,6 +20,9 @@ _TOOL_PARAM_RANGES: dict[str, tuple[float, float]] = {
     "sa_alpha": (0.9, 0.9999),
     "sa_sigma": (0.03, 0.3),
     "bo_xi": (0.0, 0.1),
+    "ppo_lr": (0.001, 0.05),
+    "ppo_clip": (0.05, 0.4),
+    "ppo_gamma": (0.9, 0.999),
 }
 
 
@@ -39,6 +42,9 @@ class StrategyGenome:
             "sa_alpha": 0.995,
             "sa_sigma": 0.1,
             "bo_xi": 0.01,
+            "ppo_lr": 0.01,
+            "ppo_clip": 0.2,
+            "ppo_gamma": 0.99,
         }
     )
     weights: np.ndarray | None = None

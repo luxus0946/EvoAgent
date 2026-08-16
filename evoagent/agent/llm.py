@@ -116,6 +116,7 @@ class MockLLMClient(LLMClient):
             "cma_es_first": "cma_es",
             "bo_first": "bo",
             "ga_first": "ga",
+            "ppo_first": "ppo",
             "diversify_first": "random_search",
         }
         initial = pref_to_tool.get(tool_pref, "cma_es")
@@ -146,6 +147,9 @@ class MockLLMClient(LLMClient):
                 "sa_alpha": 0.995,
                 "sa_sigma": 0.1,
                 "bo_xi": 0.01,
+                "ppo_lr": 0.01,
+                "ppo_clip": 0.2,
+                "ppo_gamma": 0.99,
             },
         }
 

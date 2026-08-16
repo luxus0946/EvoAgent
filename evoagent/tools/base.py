@@ -11,7 +11,7 @@ import numpy as np
 from evoagent.environment.problem import OptimizationProblem
 
 # 工具注册表：策略基因与工具池共享的名称集合
-TOOL_NAMES = ["random_search", "sa", "ga", "cma_es", "bo"]
+TOOL_NAMES = ["random_search", "sa", "ga", "cma_es", "bo", "ppo"]
 
 
 @dataclass

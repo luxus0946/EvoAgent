@@ -21,6 +21,7 @@ _PREFERENCE_TEXT = {
     "cma_es_first": "优先使用 CMA-ES 作为主优化工具。",
     "bo_first": "优先使用贝叶斯优化作为主优化工具。",
     "ga_first": "优先使用遗传算法作为主优化工具。",
+    "ppo_first": "优先使用 PPO 强化学习作为主优化工具，让策略网络自适应学习更新方向。",
     "diversify_first": "优先从多样化探索（随机/模拟退火）开始。",
 }
 
@@ -51,7 +52,8 @@ def build_system_prompt(prompt: EvolvablePrompt | None) -> str:
         '{"initial_tool": "cma_es", "second_tool": "bo", '
         '"switch_after_ratio": 0.5, "stop_patience": 0.3, '
         '"tool_params": {"cma_sigma": 0.25, "ga_mutation": 0.15, '
-        '"sa_t0": 0.05, "sa_alpha": 0.995, "sa_sigma": 0.1, "bo_xi": 0.01}}\n'
+        '"sa_t0": 0.05, "sa_alpha": 0.995, "sa_sigma": 0.1, "bo_xi": 0.01, '
+        '"ppo_lr": 0.01, "ppo_clip": 0.2, "ppo_gamma": 0.99}}\n'
         "```\n"
         f"可选工具: {TOOL_NAMES}\n"
         "除 JSON 外不要输出任何其他内容。"
