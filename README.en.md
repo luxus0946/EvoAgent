@@ -274,8 +274,8 @@ figures/           # charts used by this README
 - [x] Phase 2 verification: prompt evolution vs. fixed prompt vs. Phase 1 (same LLM-call budget)
 - [x] Phase 3 (core four): full-state checkpoints + three-way parent sampling / MAP-Elites + EoH operator mutation + SEW dual-mode
 - [x] Meta layer: Bayesian-optimized evolution hyperparameters (semiconductor +3.5%)
+- [x] Phase 5: FastAPI REST service (background task queue) + Gradio demo UI + Docker
 - [ ] Phase 4: LangGraph orchestration, PPO tool integration
-- [ ] Phase 5: FastAPI + Gradio + Docker
 
 ## Reproducibility
 

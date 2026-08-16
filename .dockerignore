@@ -1,0 +1,8 @@
+.git
+__pycache__
+*.pyc
+.pytest_cache
+data/
+.env
+*.egg-info
+C:\Users\JIANG\AppData\Local\Temp\opencode

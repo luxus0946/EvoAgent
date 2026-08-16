@@ -50,6 +50,19 @@ python experiments/run_llm_agent.py --llm mock --seeds 3
 
 # 使用真实 DeepSeek API（需先配置 .env，见 .env.example）
 python experiments/run_llm_agent.py --llm real --seeds 1
+
+# Meta 层：贝叶斯优化自动配置进化超参
+python experiments/run_meta_search.py --problem semiconductor
+
+# REST API（FastAPI，后台任务队列）
+python -m uvicorn app.api:app --host 0.0.0.0 --port 8000
+curl http://localhost:8000/api/health
+
+# Gradio 演示界面（浏览器 http://127.0.0.1:7860）
+python app/gradio_app.py
+
+# Docker（API + UI 双服务）
+docker compose up --build
 ```
 
 结果输出至 `data/results/verification_*/`：
@@ -156,8 +169,10 @@ evoagent/
 ├── tools/         # 优化工具池：随机搜索/模拟退火/GA/CMA-ES/贝叶斯优化/NSGA-II（numpy 自研）
 ├── config.py      # 全局配置（含 LLMConfig）
 └── utils/         # 日志、随机种子、可视化
-experiments/       # run_evolution / compare_baselines / run_llm_agent（阶段二/三）/ run_meta_search / make_readme_figures
-tests/             # 111 个单元测试（含 agent 层、检查点、MAP-Elites、EoH 算子、SEW 双模式、Meta 层）
+app/               # 第5层：FastAPI REST 服务（任务队列）+ Gradio 演示界面
+experiments/       # run_evolution / compare_baselines / run_llm_agent / run_meta_search / make_readme_figures
+tests/             # 117 个单元测试（含 agent 层、检查点、MAP-Elites、EoH 算子、SEW 双模式、Meta 层、API）
+Dockerfile / docker-compose.yml   # API + UI 双服务容器化
 ```
 
 ## 路线图
@@ -168,8 +183,8 @@ tests/             # 111 个单元测试（含 agent 层、检查点、MAP-Elite
 - [x] 阶段二验证：提示词进化 vs 固定提示词 vs 阶段一（同 LLM 调用口径）
 - [x] 阶段三（核心四项）：全状态检查点 + 三路父代采样/MAP-Elites + EoH 算子式变异 + SEW 双模式
 - [x] Meta 层：贝叶斯优化自动配置进化超参（半导体 +3.5%）
+- [x] 阶段五：FastAPI REST 服务（后台任务队列）+ Gradio 演示界面 + Docker
 - [ ] 阶段四：LangGraph 编排、PPO 工具接入
-- [ ] 阶段五：FastAPI + Gradio + Docker
 
 ## 可复现性
 
